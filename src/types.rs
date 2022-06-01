@@ -1,10 +1,10 @@
 use ethers_core::types::{Bytes, H160, H256, U256, U64};
-use once_cell::unsync::Lazy;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 /// Magic value used to specify the chain-native token
-pub const NATIVE_TOKEN: Lazy<FeeToken> = Lazy::new(|| {
+static NATIVE_TOKEN: Lazy<FeeToken> = Lazy::new(|| {
     FeeToken(
         "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
             .parse()
@@ -167,7 +167,7 @@ pub(crate) struct RelayChainsResponse {
 }
 
 impl RelayChainsResponse {
-    pub(crate) fn relays<'a>(&'a self) -> impl Iterator<Item = usize> + 'a {
+    pub(crate) fn relays(&self) -> impl Iterator<Item = usize> + '_ {
         self.relays.iter().map(|s| s.parse().unwrap())
     }
 }

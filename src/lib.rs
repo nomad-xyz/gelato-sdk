@@ -18,7 +18,7 @@ use color_eyre::eyre::Result;
 use ethers_core::types::{Bytes, H160, H256, U64};
 use once_cell::sync::Lazy;
 
-const DEFAULT_URL: Lazy<reqwest::Url> =
+static DEFAULT_URL: Lazy<reqwest::Url> =
     Lazy::new(|| "https://relay.gelato.digital/".parse().unwrap());
 
 /// A Gelato Relay Client
