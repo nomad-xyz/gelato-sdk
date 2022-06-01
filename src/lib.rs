@@ -14,7 +14,6 @@ pub use types::*;
 /// Re-export reqwest for convenience
 pub use reqwest;
 
-use color_eyre::eyre::Result;
 use ethers_core::types::{Bytes, H160, H256, U64};
 use once_cell::sync::Lazy;
 
