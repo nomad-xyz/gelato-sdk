@@ -1,7 +1,6 @@
 use ethers_core::types::{Bytes, H160, H256, U256, U64};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
 
 /// Magic value used to specify the chain-native token
 static NATIVE_TOKEN: Lazy<FeeToken> = Lazy::new(|| {
@@ -26,6 +25,14 @@ impl std::ops::Deref for FeeToken {
     }
 }
 
+impl std::str::FromStr for FeeToken {
+    type Err = <H160 as std::str::FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.parse()?))
+    }
+}
+
 impl Default for FeeToken {
     fn default() -> Self {
         *NATIVE_TOKEN
@@ -36,78 +43,6 @@ impl From<H160> for FeeToken {
     fn from(token: H160) -> Self {
         Self(token)
     }
-}
-
-/// Gelato payment type
-/// <https://docs.gelato.network/developer-products/gelato-relay-sdk/payment-types>
-#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq)]
-#[repr(u8)]
-pub enum PaymentType {
-    /// The target smart contract will pay Gelato Relay's smart contract as the
-    /// call is forwarded. Payment can be done in feeToken, where it is
-    /// expected to be a whitelisted payment token.
-    Synchronous = 0,
-    /// The sponsor must hold a balance in one of Gelato's Gas Tank smart
-    /// contracts. The balance could even be held on a different chainId than
-    /// the one the transaction is being relayed on (as defined by
-    /// sponsorChainId).
-    ///
-    /// An event is emitted to tell Gelato how much to charge in the future,
-    /// which shall be acknowledged in an off-chain accounting system. A
-    /// sponsor signature is expected in order to ensure that the sponsor
-    /// agrees on being charged up to a maxFee amount
-    AsyncGasTank = 1,
-    /// Similar to Type 1, but sponsor is expected to hold a balance with
-    /// Gelato on the same chainId where the transaction is executed. Fee
-    /// deduction happens during the transaction. A sponsor signature is
-    /// expected in order to ensure that the sponsor agrees on being charged up
-    /// to a maxFee amount.
-    SyncGasTank = 2,
-    /// In this scenario a sponsor pre-approves the appropriate Gelato Relay's
-    /// smart contract to spend tokens up so some maximum allowance value.
-    /// During execution of the transaction, Gelato will credit due fees using
-    /// `IERC20(feeToken).transferFrom(...)` in order to pull fees from his/her
-    /// account. A sponsor signature is expected in order to ensure that the
-    /// sponsor agrees on being charged up to a maxFee amount.
-    SyncPullFee = 3,
-}
-
-/// Request for forwarding tx to gas-tank based relay service.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct ForwardRequest {
-    /// must be exactly "ForwardRequest"
-    pub type_id: &'static str,
-    /// Chain id
-    pub chain_id: usize,
-    /// Address of dApp's smart contract to call.
-    pub target: H160,
-    /// Payload for `target`.
-    pub data: Bytes,
-    /// paymentToken for Gelato Executors
-    pub fee_token: H160,
-    ///Type identifier for Gelato's payment. Can be 1, 2 or 3.
-    pub payment_type: PaymentType, // 1 = gas tank
-    /// Maximum fee sponsor is willing to pay Gelato Executors
-    pub max_fee: U64,
-    /// Gas limit
-    pub gas: U64,
-    /// EOA address that pays Gelato Executors.
-    pub sponsor: H160,
-    /// Chain ID of where sponsor holds a Gas Tank balance with Gelato
-    /// Usually the same as `
-    pub sponsor_chain_id: usize,
-    /// Smart contract nonce for sponsor to sign.
-    /// Can be 0 if enforceSponsorNonce is always false.
-    pub nonce: usize,
-    /// Whether or not to enforce replay protection using sponsor's nonce.
-    /// Defaults to false, as repla
-    pub enforce_sponsor_nonce: bool,
-    /// Whether or not ordering matters for concurrently submitted transactions.
-    /// Defaults to `true` if not provided.
-    pub enforce_sponsor_nonce_ordering: Option<bool>,
-    /// EIP-712 signature over the forward request
-    pub sponsor_signature: ethers_core::types::Signature,
 }
 
 /// A Relay Request
@@ -197,7 +132,7 @@ impl IntoIterator for TaskStatusResponse {
     }
 }
 
-/// A Task Status object
+/// A TransactionStatus object
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionStatus {

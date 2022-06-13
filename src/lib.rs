@@ -5,17 +5,25 @@
 #![forbid(unsafe_code)]
 #![forbid(where_clauses_object_safety)]
 
-mod types;
-use std::str::FromStr;
+/// Gelato Types
+pub mod types;
 
-use reqwest::{IntoUrl, Url};
+use forward::SignedForwardRequest;
 pub use types::*;
+
+/// lib utils
+pub(crate) mod utils;
+
+/// Forward Request
+pub mod forward;
 
 /// Re-export reqwest for convenience
 pub use reqwest;
+use reqwest::{IntoUrl, Url};
 
 use ethers_core::types::{Bytes, H160, H256, U64};
 use once_cell::sync::Lazy;
+use std::str::FromStr;
 
 static DEFAULT_URL: Lazy<reqwest::Url> =
     Lazy::new(|| "https://relay.gelato.digital/".parse().unwrap());
@@ -123,7 +131,7 @@ impl GelatoClient {
     /// protection.
     pub async fn send_forward_request(
         &self,
-        params: &ForwardRequest,
+        params: &SignedForwardRequest,
     ) -> Result<RelayResponse, reqwest::Error> {
         self.client
             .post(self.send_forward_request_url(params.chain_id))
