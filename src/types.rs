@@ -1,7 +1,7 @@
-use ethers_core::types::{Bytes, H160, H256, U256, U64};
+use ethers_core::types::{Bytes, Address, H256, U256, U64};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
+use serde_repr::{Serialize_repr, Deserialize_repr};
 
 /// Magic value used to specify the chain-native token
 static NATIVE_TOKEN: Lazy<FeeToken> = Lazy::new(|| {
@@ -51,10 +51,10 @@ pub enum PaymentType {
 /// magic value indicates "eth" or the native asset of the chain. This FeeToken
 /// must be allowlisted by Gelato validators
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub struct FeeToken(H160);
+pub struct FeeToken(Address);
 
 impl std::ops::Deref for FeeToken {
-    type Target = H160;
+    type Target = Address;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -62,7 +62,7 @@ impl std::ops::Deref for FeeToken {
 }
 
 impl std::str::FromStr for FeeToken {
-    type Err = <H160 as std::str::FromStr>::Err;
+    type Err = <Address as std::str::FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(s.parse()?))
@@ -75,8 +75,8 @@ impl Default for FeeToken {
     }
 }
 
-impl From<H160> for FeeToken {
-    fn from(token: H160) -> Self {
+impl From<Address> for FeeToken {
+    fn from(token: Address) -> Self {
         Self(token)
     }
 }
@@ -86,7 +86,7 @@ impl From<H160> for FeeToken {
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
     /// The address of the contract to be called
-    pub dest: H160,
+    pub dest: Address,
     /// The calldata
     pub data: Bytes,
     /// The fee token
@@ -234,7 +234,7 @@ pub struct Check {
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
     /// Transaction target
-    pub to: H160,
+    pub to: Address,
     /// Transaction input data
     pub data: Bytes,
     /// Fee data
