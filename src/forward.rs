@@ -109,7 +109,7 @@ impl Eip712 for ForwardRequest {
 
     fn domain(&self) -> Result<EIP712Domain, Self::Error> {
         let verifying_contract = get_forwarder(self.chain_id)
-            .ok_or_else(|| ForwardRequestError::UnknownForwarderError(self.chain_id))?;
+            .ok_or(ForwardRequestError::UnknownForwarderError(self.chain_id))?;
 
         Ok(EIP712Domain {
             name: "GelatoRelayForwarder".to_owned(),
