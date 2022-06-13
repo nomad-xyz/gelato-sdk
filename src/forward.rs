@@ -8,49 +8,23 @@ use ethers_core::{
 };
 
 use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{utils::get_forwarder, FeeToken};
+use crate::{utils::get_forwarder, FeeToken, PaymentType};
 
 const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
-
-/// Gelato payment type
-/// <https://docs.gelato.network/developer-products/gelato-relay-sdk/payment-types>
-#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq)]
-#[repr(u8)]
-pub enum PaymentType {
-    /// The target smart contract will pay Gelato Relay's smart contract as the
-    /// call is forwarded. Payment can be done in feeToken, where it is
-    /// expected to be a whitelisted payment token.
-    Synchronous = 0,
-    /// The sponsor must hold a balance in one of Gelato's Gas Tank smart
-    /// contracts. The balance could even be held on a different chainId than
-    /// the one the transaction is being relayed on (as defined by
-    /// sponsorChainId).
-    ///
-    /// An event is emitted to tell Gelato how much to charge in the future,
-    /// which shall be acknowledged in an off-chain accounting system. A
-    /// sponsor signature is expected in order to ensure that the sponsor
-    /// agrees on being charged up to a maxFee amount
-    AsyncGasTank = 1,
-    /// Similar to Type 1, but sponsor is expected to hold a balance with
-    /// Gelato on the same chainId where the transaction is executed. Fee
-    /// deduction happens during the transaction. A sponsor signature is
-    /// expected in order to ensure that the sponsor agrees on being charged up
-    /// to a maxFee amount.
-    SyncGasTank = 2,
-    /// In this scenario a sponsor pre-approves the appropriate Gelato Relay's
-    /// smart contract to spend tokens up so some maximum allowance value.
-    /// During execution of the transaction, Gelato will credit due fees using
-    /// `IERC20(feeToken).transferFrom(...)` in order to pull fees from his/her
-    /// account. A sponsor signature is expected in order to ensure that the
-    /// sponsor agrees on being charged up to a maxFee amount.
-    SyncPullFee = 3,
-}
 
 /// Unfilled Gelato forward request. This request is signed and filled according
 /// to EIP-712 then sent to Gelato. Gelato executes the provided tx `data` on
 /// the `target` contract address.
+///
+/// ForwardRequest is designed to handle payments of type , in cases
+/// where all meta-transaction related logic (or other kinds of replay
+/// protection mechanisms such as hash based commitments) is already
+/// implemented inside target smart contract. The sponsor is still required to
+/// EIP-712 sign this request, in order to ensure the integrity of payments.
+/// Optionally, nonce may or may not be enforced, by setting
+/// `enforceSponsorNonce`. Some dApps may not need to rely on a nonce for
+/// ForwardRequest if they already implement strong forms of replay protection.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ForwardRequest {
     /// Chain id
@@ -102,6 +76,9 @@ pub enum ForwardRequestError {
     /// Signer errored
     #[error("{0}")]
     SignerError(Box<dyn std::error::Error + Send + Sync + 'static>),
+    /// InappropriatePaymentType
+    #[error("Payment type Synchronous may not be used with this request")]
+    InappropriatePaymentType,
 }
 
 impl Eip712 for ForwardRequest {
@@ -171,6 +148,9 @@ impl ForwardRequest {
                 actual: signer_addr,
             });
         }
+        if self.payment_type == PaymentType::Synchronous {
+            return Err(ForwardRequestError::InappropriatePaymentType);
+        }
 
         let signature = signer
             .sign_typed_data(self)
@@ -181,7 +161,8 @@ impl ForwardRequest {
     }
 }
 
-/// Request for forwarding tx to gas-tank based relay service.
+/// Request for forwarding tx to gas-tank based relay service. Signed and ready
+/// for dispatch
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SignedForwardRequest {
