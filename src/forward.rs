@@ -9,7 +9,7 @@ use ethers_core::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::get_forwarder, FeeToken, PaymentType};
+use crate::{utils::get_forwarder, FeeToken, PaymentType, RsvSignature};
 
 const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
 
@@ -124,14 +124,11 @@ impl Eip712 for ForwardRequest {
 
 impl ForwardRequest {
     /// Fill ForwardRequest with sponsor signature and return full request struct
-    pub fn add_signature(
-        self,
-        sponsor_signature: ethers_core::types::Signature,
-    ) -> SignedForwardRequest {
+    pub fn add_signature(self, sponsor_signature: Signature) -> SignedForwardRequest {
         SignedForwardRequest {
             type_id: "ForwardRequest",
             req: self,
-            sponsor_signature,
+            sponsor_signature: sponsor_signature.into(),
         }
     }
 
@@ -174,7 +171,14 @@ pub struct SignedForwardRequest {
     req: ForwardRequest,
 
     /// EIP-712 signature over the forward request
-    pub sponsor_signature: Signature,
+    sponsor_signature: RsvSignature,
+}
+
+impl SignedForwardRequest {
+    /// Get the attached sponsor signature
+    pub fn sponsor_signature(&self) -> Signature {
+        *self.sponsor_signature
+    }
 }
 
 impl std::ops::Deref for SignedForwardRequest {
@@ -187,6 +191,8 @@ impl std::ops::Deref for SignedForwardRequest {
 
 #[cfg(test)]
 mod test {
+    use crate::RsvSignature;
+
     use super::*;
     use ethers::signers::LocalWallet;
     use ethers::signers::Signer;
@@ -236,9 +242,13 @@ mod test {
         let sponsor: LocalWallet = DUMMY_SPONSOR_KEY.parse().unwrap();
         assert_eq!(DUMMY_SPONSOR_ADDRESS, format!("{:#x}", sponsor.address()));
 
-        let signature = sponsor.sign_typed_data(&*REQUEST).await.unwrap().to_vec();
+        let signature: RsvSignature = sponsor.sign_typed_data(&*REQUEST).await.unwrap().into();
 
-        let hex_sig = format!("0x{}", hex::encode(signature));
-        assert_eq!(SPONSOR_SIGNATURE, hex_sig);
+        let hex_sig = format!("0x{}", &signature);
+        assert_eq!(hex_sig, SPONSOR_SIGNATURE);
+        assert_eq!(
+            serde_json::to_value(&signature).unwrap(),
+            serde_json::Value::String(SPONSOR_SIGNATURE.to_owned()),
+        );
     }
 }
