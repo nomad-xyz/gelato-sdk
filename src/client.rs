@@ -137,6 +137,26 @@ impl GelatoClient {
             .await
     }
 
+    /// Gelato relay MetaTxRequest
+    ///
+    /// <https://docs.gelato.network/developer-products/gelato-relay-sdk/request-types#metatxrequest>
+    ///
+    /// MetaTxRequest is designed to handle payments of type AsyncGasTank,
+    /// SyncGasTank and SyncPullFee, in cases where the target contract does not
+    /// have any meta-transaction nor replay protection logic. In this case, the
+    /// appropriate Gelato Relay's smart contract already verifies user and sponsor
+    /// signatures. user is the EOA address that wants to interact with the dApp,
+    /// while sponsor is the account that pays fees.
+    pub async fn send_meta_tx_request(&self, params: &rpc::SignedMetaTxRequest) -> Result<rpc::RelayResponse, reqwest::Error> {
+        self.client
+        .post(self.send_forward_request_url(params.chain_id))
+        .json(&params)
+        .send()
+        .await?
+        .json()
+        .await
+    }
+
     /// Check if a chain id is supported by Gelato API
     pub async fn is_chain_supported(&self, chain_id: u64) -> Result<bool, reqwest::Error> {
         Ok(self.get_gelato_relay_chains().await?.contains(&chain_id))

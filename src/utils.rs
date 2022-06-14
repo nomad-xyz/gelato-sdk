@@ -54,3 +54,10 @@ pub static CHAIN_ID_TO_FORWARDER: Lazy<HashMap<u64, Address>> = Lazy::new(|| {
 pub fn get_forwarder(chain_id: u64) -> Option<Address> {
     CHAIN_ID_TO_FORWARDER.get(&chain_id).copied()
 }
+
+/// Todo: Populate
+pub static CHAIN_ID_TO_META_BOX: Lazy<HashMap<u64, Address>> = Lazy::new(Default::default);
+
+pub fn get_meta_box(chain_id: u64) -> Option<Address> {
+    CHAIN_ID_TO_META_BOX.get(&chain_id).copied()
+}
