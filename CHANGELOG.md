@@ -2,6 +2,7 @@
 
 # Unreleased
 
+- refactor: move all rpc requests into modules
 - refactor: Rename the dispatch-ready forward req to `Signed___`.
 - feat: Move the unsigned forward req into this crate
 - refactor: Clean up typing
