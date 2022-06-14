@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use ethers_core::types::Address;
 use once_cell::sync::Lazy;
 
-pub static CHAIN_ID_TO_FORWARDER: Lazy<HashMap<usize, Address>> = Lazy::new(|| {
+pub static CHAIN_ID_TO_FORWARDER: Lazy<HashMap<u64, Address>> = Lazy::new(|| {
     HashMap::from([
         // Kovan
         (
@@ -51,6 +51,6 @@ pub static CHAIN_ID_TO_FORWARDER: Lazy<HashMap<usize, Address>> = Lazy::new(|| {
 });
 
 /// Get the forwarder for a chain id
-pub fn get_forwarder(chain_id: usize) -> Option<Address> {
+pub fn get_forwarder(chain_id: u64) -> Option<Address> {
     CHAIN_ID_TO_FORWARDER.get(&chain_id).copied()
 }

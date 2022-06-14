@@ -108,7 +108,7 @@ impl GelatoClient {
         res.json().await
     }
 
-    fn send_forward_request_url(&self, chain_id: usize) -> Url {
+    fn send_forward_request_url(&self, chain_id: u64) -> Url {
         self.url
             .join("metabox-relays/")
             .unwrap()

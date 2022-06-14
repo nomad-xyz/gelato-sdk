@@ -28,7 +28,7 @@ const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address targe
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ForwardRequest {
     /// Chain id
-    pub chain_id: usize,
+    pub chain_id: u64,
     /// Address of dApp's smart contract to call.
     pub target: Address,
     /// Payload for `target`.
@@ -45,7 +45,7 @@ pub struct ForwardRequest {
     pub sponsor: Address,
     /// Chain ID of where sponsor holds a Gas Tank balance with Gelato
     /// Usually the same as `
-    pub sponsor_chain_id: usize,
+    pub sponsor_chain_id: u64,
     /// Smart contract nonce for sponsor to sign.
     /// Can be 0 if enforceSponsorNonce is always false.
     pub nonce: usize,
@@ -61,8 +61,8 @@ pub struct ForwardRequest {
 #[derive(Debug, thiserror::Error)]
 pub enum ForwardRequestError {
     /// Unknown forwarder
-    #[error("Forwarder contract unknown for domain: {0}")]
-    UnknownForwarderError(usize),
+    #[error("Forwarder contract unknown for chain id: {0}")]
+    UnknownForwarderError(u64),
     /// Wrong Signer
     #[error(
         "Wrong signer. Expected {expected:?}. Attempted to sign with key belonging to: {actual:?}"
