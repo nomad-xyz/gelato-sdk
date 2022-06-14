@@ -6,8 +6,8 @@ pub use common::*;
 pub(crate) mod chains;
 pub(crate) use chains::*;
 
-pub(crate) mod forward;
-pub use forward::*;
+pub(crate) mod forward_req;
+pub use forward_req::*;
 
 pub(crate) mod gas;
 pub use gas::*;
