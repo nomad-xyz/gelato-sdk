@@ -39,7 +39,7 @@ pub struct ForwardRequest {
     /// paymentToken for Gelato Executors
     pub fee_token: FeeToken,
     /// Type identifier for Gelato's payment. Can be 1, 2 or 3.
-    pub payment_type: PaymentType, // 1 = gas tank
+    pub payment_type: PaymentType,
     /// Maximum fee sponsor is willing to pay Gelato Executors
     pub max_fee: U64,
     /// Gas limit

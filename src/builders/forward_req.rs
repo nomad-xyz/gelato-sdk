@@ -1,4 +1,6 @@
-use ethers_core::types::{Address, Bytes, NameOrAddress, U64, transaction::eip2718::TypedTransaction, TransactionRequest};
+use ethers_core::types::{
+    transaction::eip2718::TypedTransaction, Address, Bytes, NameOrAddress, TransactionRequest, U64,
+};
 
 use crate::{
     rpc::{ForwardRequest, SignedForwardRequest},
@@ -18,22 +20,25 @@ pub struct ForwardRequestBuilder {
     pub fee_token: Option<FeeToken>,
     /// Type identifier for Gelato's payment. Can be 1, 2 or 3.
     /// Defaults to 1: `AsyncGasTank`
-    pub payment_type: Option<PaymentType>, // 1 = gas tank
+    pub payment_type: Option<PaymentType>,
     /// Maximum fee sponsor is willing to pay Gelato Executors. Required
     pub max_fee: Option<U64>,
-    /// Gas limit
+    /// Gas limit. Required
     pub gas: Option<U64>,
     /// EOA address that pays Gelato Executors.
+    /// Required. May be set automatically by the sponsor signer
     pub sponsor: Option<Address>,
     /// Chain ID of where sponsor holds a Gas Tank balance with Gelato
     /// Usually the same as `chain_id`
     /// relevant for payment type 1: `AsyncGasTank`
+    /// Required. May be set automatically by the sponsor signer
     pub sponsor_chain_id: Option<u64>,
     /// Smart contract nonce for sponsor to sign.
     /// Can be 0 if enforceSponsorNonce is always false.
+    /// Required.
     pub nonce: Option<usize>,
     /// Whether or not to enforce replay protection using sponsor's nonce.
-    /// Defaults to false, as repla
+    /// Defaults to `true`.
     pub enforce_sponsor_nonce: Option<bool>,
     /// Whether or not ordering matters for concurrently submitted transactions.
     /// Defaults to `true` if not provided.
@@ -84,10 +89,33 @@ impl From<&TypedTransaction> for ForwardRequestBuilder {
             builder = builder.sponsor_address(*from);
         }
 
-        builder    }
+        builder
+    }
 }
 
 impl ForwardRequestBuilder {
+    /// Which keys need to be populated
+    pub fn missing_keys(&self) -> Vec<&'static str> {
+        let mut missing = vec![];
+        if self.target.is_none() {
+            missing.push("target");
+        }
+        if self.max_fee.is_none() {
+            missing.push("max_fee");
+        }
+        if self.gas.is_none() {
+            missing.push("gas");
+        }
+        if self.sponsor.is_none() {
+            missing.push("sponsor");
+        }
+        // Nonce is required if enforcement is true or not set
+        if self.enforce_sponsor_nonce.unwrap_or(true) && self.nonce.is_none() {
+            missing.push("nonce");
+        }
+        missing
+    }
+
     /// Set `chain_id`. Defaults to 1 (ethereum)
     pub fn chain_id(mut self, val: u64) -> Self {
         self.chain_id = Some(val);
@@ -178,13 +206,7 @@ impl ForwardRequestBuilder {
 
     /// Build this request
     pub fn build(self) -> eyre::Result<ForwardRequest> {
-        let mut missing = vec![];
-        if self.target.is_none() { missing.push("target"); }
-        if self.max_fee.is_none() { missing.push("max_fee"); }
-        if self.gas.is_none() { missing.push("gas"); }
-        if self.sponsor.is_none() { missing.push("sponsor"); }
-        if self.nonce.is_none() { missing.push("nonce"); }
-
+        let missing = self.missing_keys();
         eyre::ensure!(
             missing.is_empty(),
             "Missing required values in build: {}",
@@ -201,11 +223,10 @@ impl ForwardRequestBuilder {
             gas: self.gas.unwrap(),
             sponsor: self.sponsor.unwrap(),
             sponsor_chain_id: self.sponsor_chain_id.unwrap_or(1),
-            nonce: self.nonce.unwrap(),
+            nonce: self.nonce.unwrap_or_default(),
             enforce_sponsor_nonce: self.enforce_sponsor_nonce.unwrap_or(true),
             enforce_sponsor_nonce_ordering: self.enforce_sponsor_nonce_ordering,
         })
-
     }
 }
 
