@@ -1,4 +1,4 @@
-use ethers_core::types::{Address, Bytes, NameOrAddress, U64};
+use ethers_core::types::{Address, Bytes, NameOrAddress, U64, transaction::eip2718::TypedTransaction, TransactionRequest};
 
 use crate::{
     rpc::{ForwardRequest, SignedForwardRequest},
@@ -40,8 +40,8 @@ pub struct ForwardRequestBuilder {
     pub enforce_sponsor_nonce_ordering: Option<bool>,
 }
 
-impl From<ethers_core::types::TransactionRequest> for ForwardRequestBuilder {
-    fn from(tx: ethers_core::types::TransactionRequest) -> Self {
+impl From<&TransactionRequest> for ForwardRequestBuilder {
+    fn from(tx: &TransactionRequest) -> Self {
         let mut builder = ForwardRequestBuilder::default();
 
         if let Some(NameOrAddress::Address(target)) = tx.to {
@@ -50,8 +50,8 @@ impl From<ethers_core::types::TransactionRequest> for ForwardRequestBuilder {
         if let Some(gas) = tx.gas {
             builder = builder.gas(gas.as_u64());
         }
-        if let Some(data) = tx.data {
-            builder = builder.data(data);
+        if let Some(data) = &tx.data {
+            builder = builder.data(data.clone());
         }
         if let Some(nonce) = tx.nonce {
             builder = builder.nonce(nonce.as_usize());
@@ -62,6 +62,29 @@ impl From<ethers_core::types::TransactionRequest> for ForwardRequestBuilder {
 
         builder
     }
+}
+
+impl From<&TypedTransaction> for ForwardRequestBuilder {
+    fn from(tx: &TypedTransaction) -> Self {
+        let mut builder = ForwardRequestBuilder::default();
+
+        if let Some(NameOrAddress::Address(target)) = tx.to() {
+            builder = builder.target(*target);
+        }
+        if let Some(gas) = tx.gas() {
+            builder = builder.gas(gas.as_u64());
+        }
+        if let Some(data) = tx.data() {
+            builder = builder.data(data.clone());
+        }
+        if let Some(nonce) = tx.nonce() {
+            builder = builder.nonce(nonce.as_usize());
+        }
+        if let Some(from) = tx.from() {
+            builder = builder.sponsor_address(*from);
+        }
+
+        builder    }
 }
 
 impl ForwardRequestBuilder {
