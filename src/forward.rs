@@ -133,7 +133,9 @@ impl ForwardRequest {
     }
 
     /// Sign the request with the specified signer
-    pub async fn sign<S>(&self, signer: S) -> Result<SignedForwardRequest, ForwardRequestError>
+    ///
+    /// Errors if the signer does not match the sponsor in the struct
+    pub async fn sign<S>(self, signer: S) -> Result<SignedForwardRequest, ForwardRequestError>
     where
         S: ethers_signers::Signer,
         S::Error: 'static,
@@ -150,11 +152,26 @@ impl ForwardRequest {
         }
 
         let signature = signer
-            .sign_typed_data(self)
+            .sign_typed_data(&self)
             .await
             .map_err(Box::new)
             .map_err(|e| ForwardRequestError::SignerError(e))?;
-        Ok(self.clone().add_signature(signature))
+        Ok(self.add_signature(signature))
+    }
+
+    /// Sponsor the request with the specified signer
+    ///
+    /// Overwrites the existing sponsor
+    pub async fn sponsor<S>(
+        mut self,
+        sponsor: S,
+    ) -> Result<SignedForwardRequest, ForwardRequestError>
+    where
+        S: ethers_signers::Signer,
+        S::Error: 'static,
+    {
+        self.sponsor = sponsor.address();
+        self.sign(sponsor).await
     }
 }
 
