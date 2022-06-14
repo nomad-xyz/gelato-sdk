@@ -1,4 +1,4 @@
-use ethers_core::types::{Bytes, H160, H256, U256, U64};
+use ethers_core::types::{Address, Bytes, Signature, H256, U256, U64};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -12,33 +12,60 @@ static NATIVE_TOKEN: Lazy<FeeToken> = Lazy::new(|| {
     )
 });
 
-/// A gelato fee token is an ERC20 address, which defaults to `0xee..ee`. This
-/// magic value indicates "eth" or the native asset of the chain. This FeeToken
-/// must be allowlisted by Gelato validators
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub struct FeeToken(H160);
+#[derive(Debug, Clone, Copy, PartialEq)]
+/// Wrapper around a signature that ensures it serializes/deserializes
+/// as a 0x-prepended hex representation of RSV
+pub(crate) struct RsvSignature(Signature);
 
-impl std::ops::Deref for FeeToken {
-    type Target = H160;
+impl std::fmt::Display for RsvSignature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl std::ops::Deref for RsvSignature {
+    type Target = Signature;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl Default for FeeToken {
-    fn default() -> Self {
-        *NATIVE_TOKEN
+impl From<Signature> for RsvSignature {
+    fn from(s: Signature) -> Self {
+        Self(s)
     }
 }
 
-impl From<H160> for FeeToken {
-    fn from(token: H160) -> Self {
-        Self(token)
+impl From<RsvSignature> for Signature {
+    fn from(s: RsvSignature) -> Self {
+        s.0
+    }
+}
+
+impl<'de> Deserialize<'de> for RsvSignature {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        s.parse()
+            .map(RsvSignature)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for RsvSignature {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&format!("0x{}", self.0))
     }
 }
 
 /// Gelato payment type
+///
 /// <https://docs.gelato.network/developer-products/gelato-relay-sdk/payment-types>
 #[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq)]
 #[repr(u8)]
@@ -72,42 +99,38 @@ pub enum PaymentType {
     SyncPullFee = 3,
 }
 
-/// Request for forwarding tx to gas-tank based relay service.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct ForwardRequest {
-    /// must be exactly "ForwardRequest"
-    pub type_id: &'static str,
-    /// Chain id
-    pub chain_id: usize,
-    /// Address of dApp's smart contract to call.
-    pub target: H160,
-    /// Payload for `target`.
-    pub data: Bytes,
-    /// paymentToken for Gelato Executors
-    pub fee_token: H160,
-    ///Type identifier for Gelato's payment. Can be 1, 2 or 3.
-    pub payment_type: PaymentType, // 1 = gas tank
-    /// Maximum fee sponsor is willing to pay Gelato Executors
-    pub max_fee: U64,
-    /// Gas limit
-    pub gas: U64,
-    /// EOA address that pays Gelato Executors.
-    pub sponsor: H160,
-    /// Chain ID of where sponsor holds a Gas Tank balance with Gelato
-    /// Usually the same as `
-    pub sponsor_chain_id: usize,
-    /// Smart contract nonce for sponsor to sign.
-    /// Can be 0 if enforceSponsorNonce is always false.
-    pub nonce: usize,
-    /// Whether or not to enforce replay protection using sponsor's nonce.
-    /// Defaults to false, as repla
-    pub enforce_sponsor_nonce: bool,
-    /// Whether or not ordering matters for concurrently submitted transactions.
-    /// Defaults to `true` if not provided.
-    pub enforce_sponsor_nonce_ordering: Option<bool>,
-    /// EIP-712 signature over the forward request
-    pub sponsor_signature: ethers_core::types::Signature,
+/// A gelato fee token is an ERC20 address, which defaults to `0xee..ee`. This
+/// magic value indicates "eth" or the native asset of the chain. This FeeToken
+/// must be allowlisted by Gelato validators
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+pub struct FeeToken(Address);
+
+impl std::ops::Deref for FeeToken {
+    type Target = Address;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::str::FromStr for FeeToken {
+    type Err = <Address as std::str::FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.parse()?))
+    }
+}
+
+impl Default for FeeToken {
+    fn default() -> Self {
+        *NATIVE_TOKEN
+    }
+}
+
+impl From<Address> for FeeToken {
+    fn from(token: Address) -> Self {
+        Self(token)
+    }
 }
 
 /// A Relay Request
@@ -115,7 +138,7 @@ pub struct ForwardRequest {
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
     /// The address of the contract to be called
-    pub dest: H160,
+    pub dest: Address,
     /// The calldata
     pub data: Bytes,
     /// The fee token
@@ -197,7 +220,7 @@ impl IntoIterator for TaskStatusResponse {
     }
 }
 
-/// A Task Status object
+/// A TransactionStatus object
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionStatus {
@@ -263,7 +286,7 @@ pub struct Check {
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
     /// Transaction target
-    pub to: H160,
+    pub to: Address,
     /// Transaction input data
     pub data: Bytes,
     /// Fee data
@@ -301,4 +324,23 @@ pub enum TaskState {
     Cancelled,
     /// NotFound
     NotFound,
+}
+
+#[cfg(test)]
+mod test {
+    use ethers_signers::{LocalWallet, Signer};
+
+    use crate::RsvSignature;
+
+    #[tokio::test]
+    async fn sig_serialization() {
+        let signer: LocalWallet = "11".repeat(32).parse().unwrap();
+        let signature: RsvSignature = signer.sign_message(Vec::new()).await.unwrap().into();
+
+        let hex_sig = format!("0x{}", signature);
+        assert_eq!(
+            serde_json::to_value(&signature).unwrap(),
+            serde_json::Value::String(hex_sig),
+        )
+    }
 }
