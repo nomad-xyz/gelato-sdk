@@ -2,6 +2,7 @@
 
 # Unreleased
 
+- feature: builders for MetaTxRequest & ForwardRequest
 - feature: support MetaTxRequest (user-driven, sponsor-allowed)
 - feature: support ForwardCall (type 0 payments)
 - refactor: move all rpc requests into modules
