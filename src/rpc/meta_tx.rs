@@ -177,10 +177,7 @@ impl MetaTxRequest {
     ///
     /// If this is called after `user_sign`, the tx may need to be re-signed by
     /// the user
-    pub async fn sponsor_sign<S>(
-        &mut self,
-        sponsor: &S,
-    ) -> Result<Signature, MetaTxRequestError>
+    pub async fn sponsor_sign<S>(&mut self, sponsor: &S) -> Result<Signature, MetaTxRequestError>
     where
         S: ethers_signers::Signer,
         S::Error: 'static,
@@ -204,12 +201,16 @@ impl MetaTxRequest {
     }
 
     /// Sign the tx request with a user and (optionally) with a sponsor
-    pub async fn sign<S, T>(mut self, user: &S, sponsor: Option<&T>) -> Result<SignedMetaTxRequest, MetaTxRequestError>
+    pub async fn sign<S, T>(
+        mut self,
+        user: &S,
+        sponsor: Option<&T>,
+    ) -> Result<SignedMetaTxRequest, MetaTxRequestError>
     where
         S: Signer,
         S::Error: 'static,
         T: Signer,
-        T::Error: 'static
+        T::Error: 'static,
     {
         let mut sponsor_signature = None;
         if let Some(sponsor) = sponsor {
@@ -220,8 +221,6 @@ impl MetaTxRequest {
 
         Ok(self.add_signatures(user_signature, sponsor_signature))
     }
-
-
 }
 
 /// Signed Gelato relay MetaTxRequest
