@@ -135,7 +135,7 @@ impl ForwardRequest {
     /// Sign the request with the specified signer
     ///
     /// Errors if the signer does not match the sponsor in the struct
-    pub async fn sign<S>(self, signer: S) -> Result<SignedForwardRequest, ForwardRequestError>
+    pub async fn sign<S>(self, signer: &S) -> Result<SignedForwardRequest, ForwardRequestError>
     where
         S: ethers_signers::Signer,
         S::Error: 'static,
@@ -164,7 +164,7 @@ impl ForwardRequest {
     /// Overwrites the existing sponsor
     pub async fn sponsor<S>(
         mut self,
-        sponsor: S,
+        sponsor: &S,
     ) -> Result<SignedForwardRequest, ForwardRequestError>
     where
         S: ethers_signers::Signer,
