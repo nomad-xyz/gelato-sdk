@@ -13,6 +13,8 @@ use crate::{ser::RsvSignature, utils::get_forwarder, FeeToken, PaymentType};
 
 const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
 
+/// Gelato relay ForwardRequest
+///
 /// Unfilled Gelato forward request. This request is signed and filled according
 /// to EIP-712 then sent to Gelato. Gelato executes the provided tx `data` on
 /// the `target` contract address.
@@ -26,6 +28,7 @@ const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address targe
 /// `enforceSponsorNonce`. Some dApps may not need to rely on a nonce for
 /// ForwardRequest if they already implement strong forms of replay protection.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ForwardRequest {
     /// Chain id
     pub chain_id: u64,
@@ -44,7 +47,8 @@ pub struct ForwardRequest {
     /// EOA address that pays Gelato Executors.
     pub sponsor: Address,
     /// Chain ID of where sponsor holds a Gas Tank balance with Gelato
-    /// Usually the same as `
+    /// Usually the same as `chain_id`
+    /// relevant for payment type 1: AsyncGasTank`
     pub sponsor_chain_id: u64,
     /// Smart contract nonce for sponsor to sign.
     /// Can be 0 if enforceSponsorNonce is always false.
@@ -62,7 +66,7 @@ pub struct ForwardRequest {
 pub enum ForwardRequestError {
     /// Unknown forwarder
     #[error("Forwarder contract unknown for chain id: {0}")]
-    UnknownForwarderError(u64),
+    UnknownForwarder(u64),
     /// Wrong Signer
     #[error(
         "Wrong signer. Expected {expected:?}. Attempted to sign with key belonging to: {actual:?}"
@@ -86,7 +90,7 @@ impl Eip712 for ForwardRequest {
 
     fn domain(&self) -> Result<EIP712Domain, Self::Error> {
         let verifying_contract = get_forwarder(self.chain_id)
-            .ok_or(ForwardRequestError::UnknownForwarderError(self.chain_id))?;
+            .ok_or(ForwardRequestError::UnknownForwarder(self.chain_id))?;
 
         Ok(EIP712Domain {
             name: "GelatoRelayForwarder".to_owned(),
@@ -175,8 +179,20 @@ impl ForwardRequest {
     }
 }
 
-/// Request for forwarding tx to gas-tank based relay service. Signed and ready
-/// for dispatch
+/// Signed Gelato relay ForwardRequest
+///
+/// Unfilled Gelato forward request. This request is signed and filled according
+/// to EIP-712 then sent to Gelato. Gelato executes the provided tx `data` on
+/// the `target` contract address.
+///
+/// ForwardRequest is designed to handle payments of type , in cases
+/// where all meta-transaction related logic (or other kinds of replay
+/// protection mechanisms such as hash based commitments) is already
+/// implemented inside target smart contract. The sponsor is still required to
+/// EIP-712 sign this request, in order to ensure the integrity of payments.
+/// Optionally, nonce may or may not be enforced, by setting
+/// `enforceSponsorNonce`. Some dApps may not need to rely on a nonce for
+/// ForwardRequest if they already implement strong forms of replay protection.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SignedForwardRequest {
