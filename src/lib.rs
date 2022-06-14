@@ -202,11 +202,11 @@ impl GelatoClient {
     pub async fn get_task_status(
         &self,
         task_id: H256,
-    ) -> Result<Option<TransactionStatus>, reqwest::Error> {
+    ) -> Result<Option<rpc::TransactionStatus>, reqwest::Error> {
         Ok(self
             .get(self.get_task_status_url(task_id))
             .await?
-            .json::<TaskStatusResponse>()
+            .json::<rpc::TaskStatusResponse>()
             .await?
             .into_iter()
             .next())
