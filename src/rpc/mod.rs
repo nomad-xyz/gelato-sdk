@@ -6,6 +6,9 @@ pub use common::*;
 pub(crate) mod chains;
 pub(crate) use chains::*;
 
+pub(crate) mod forward_call;
+pub use forward_call::*;
+
 pub(crate) mod forward_req;
 pub use forward_req::*;
 
