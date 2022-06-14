@@ -7,8 +7,8 @@ use crate::FeeToken;
 ///
 /// <https://docs.gelato.network/developer-products/gelato-relay-sdk/request-types#forwardcall>
 ///
-/// `ForwardCall` is designed to handle payments of type 0, as it requires no
-/// signatures. The target contract MUST implement payment.
+/// `ForwardCall` is designed to handle payments of type `Synchronous`, as it
+/// requires no signatures. The target contract MUST implement payment.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ForwardCall {
     /// Chain ID

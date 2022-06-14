@@ -96,8 +96,11 @@ impl GelatoClient {
     ///
     /// <https://docs.gelato.network/developer-products/gelato-relay-sdk/request-types#forwardcall>
     ///
-    /// `ForwardCall` is designed to handle payments of type 0, as it requires
-    /// no signatures. The target contract MUST implement payment
+    /// `ForwardCall` is designed to handle payments of type `Synchronous`, as
+    /// it requires no signatures.
+    ///
+    /// Because payment is of type `Synchronous`, the target contract MUST
+    /// pay for its gas in `params.fee_token` during call forwarding.
     pub async fn send_forward_call(&self, params: &rpc::ForwardCall) -> Result<rpc::RelayResponse, reqwest::Error> {
         self.client
             .post(self.send_forward_request_url(params.chain_id))
