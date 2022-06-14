@@ -21,14 +21,14 @@ async fn simple_queries() -> Result<(), reqwest::Error> {
     assert!(task_status.is_some());
 
     // Ensure we calling estimate fee on mainnet ethereum doesn't return error
-    let mainnet: usize = chains[0];
+    let mainnet: u64 = chains[0];
     let _ = gelato
         .get_estimated_fee(
             mainnet,
             "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 .parse::<H160>()
                 .unwrap(),
-            100_000,
+            100_000.into(),
             true,
         )
         .await

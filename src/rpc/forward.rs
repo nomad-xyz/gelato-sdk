@@ -9,7 +9,7 @@ use ethers_core::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::get_forwarder, FeeToken, PaymentType, RsvSignature};
+use crate::{ser::RsvSignature, utils::get_forwarder, FeeToken, PaymentType};
 
 const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
 
@@ -208,8 +208,6 @@ impl std::ops::Deref for SignedForwardRequest {
 
 #[cfg(test)]
 mod test {
-    use crate::RsvSignature;
-
     use super::*;
     use ethers::signers::LocalWallet;
     use ethers::signers::Signer;
