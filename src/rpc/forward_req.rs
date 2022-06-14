@@ -38,8 +38,8 @@ pub struct ForwardRequest {
     pub data: Bytes,
     /// paymentToken for Gelato Executors
     pub fee_token: FeeToken,
-    ///Type identifier for Gelato's payment. Can be 1, 2 or 3.
-    pub payment_type: PaymentType, // 1 = gas tank
+    /// Type identifier for Gelato's payment. Can be 1, 2 or 3.
+    pub payment_type: PaymentType,
     /// Maximum fee sponsor is willing to pay Gelato Executors
     pub max_fee: U64,
     /// Gas limit
@@ -54,7 +54,6 @@ pub struct ForwardRequest {
     /// Can be 0 if enforceSponsorNonce is always false.
     pub nonce: usize,
     /// Whether or not to enforce replay protection using sponsor's nonce.
-    /// Defaults to false, as repla
     pub enforce_sponsor_nonce: bool,
     /// Whether or not ordering matters for concurrently submitted transactions.
     /// Defaults to `true` if not provided.

@@ -35,7 +35,7 @@ pub struct MetaTxRequest {
     pub data: Bytes,
     /// paymentToken for Gelato Executors
     pub fee_token: FeeToken,
-    ///Type identifier for Gelato's payment. Can be 1, 2 or 3.
+    /// Type identifier for Gelato's payment. Can be 1, 2 or 3.
     pub payment_type: PaymentType, // 1 = gas tank
     /// Maximum fee sponsor is willing to pay Gelato Executors
     pub max_fee: U64,
@@ -50,7 +50,6 @@ pub struct MetaTxRequest {
     /// relevant for payment type 1: AsyncGasTank`
     pub sponsor_chain_id: Option<u64>,
     /// Smart contract nonce for sponsor to sign.
-    /// Can be 0 if enforceSponsorNonce is always false.
     pub nonce: usize,
     /// Deadline for executing this MetaTxRequest. If set to 0, no deadline is
     /// enforced
@@ -79,6 +78,11 @@ pub enum MetaTxRequestError {
     /// InappropriatePaymentType
     #[error("Payment type Synchronous may not be used with this request")]
     InappropriatePaymentType,
+    /// NoSponsor
+    #[error(
+        "Attempted to add a sponsor signature to a user-signed meta-tx request with no sponsor set"
+    )]
+    NoSponsor,
 }
 
 impl Eip712 for MetaTxRequest {
@@ -200,11 +204,22 @@ impl MetaTxRequest {
         self.get_signature(sponsor).await
     }
 
-    /// Sign the tx request with a user and (optionally) with a sponsor
-    pub async fn sign<S, T>(
+    /// Sign the requeste with no sponsor
+    pub async fn sign<S>(self, user: &S) -> Result<SignedMetaTxRequest, MetaTxRequestError>
+    where
+        S: Signer,
+        S::Error: 'static,
+    {
+        let user_signature = self.user_sign(user).await?;
+
+        Ok(self.add_signatures(user_signature, None))
+    }
+
+    /// Sign the tx request with a user and with a sponsor
+    pub async fn sign_with_sponsor<S, T>(
         mut self,
         user: &S,
-        sponsor: Option<&T>,
+        sponsor: &T,
     ) -> Result<SignedMetaTxRequest, MetaTxRequestError>
     where
         S: Signer,
@@ -212,14 +227,10 @@ impl MetaTxRequest {
         T: Signer,
         T::Error: 'static,
     {
-        let mut sponsor_signature = None;
-        if let Some(sponsor) = sponsor {
-            sponsor_signature = Some(self.sponsor_sign(sponsor).await?);
-        }
-
+        let sponsor_signature = self.sponsor_sign(sponsor).await?;
         let user_signature = self.user_sign(user).await?;
 
-        Ok(self.add_signatures(user_signature, sponsor_signature))
+        Ok(self.add_signatures(user_signature, Some(sponsor_signature)))
     }
 }
 
@@ -259,6 +270,34 @@ impl SignedMetaTxRequest {
     /// Get the attached user signature
     pub fn user_signature(&self) -> Signature {
         *self.user_signature
+    }
+
+    /// Sponsor the request with the specified signer
+    ///
+    /// Overwrites sponsor if sponsor is None
+    ///
+    /// If this is called after `user_sign`, the tx may need to be re-signed by
+    /// the user
+    pub async fn append_sponsor_sig<S>(&mut self, sponsor: &S) -> Result<(), MetaTxRequestError>
+    where
+        S: ethers_signers::Signer,
+        S::Error: 'static,
+    {
+        let signer_addr = sponsor.address();
+        if self.sponsor.is_none() {
+            return Err(MetaTxRequestError::NoSponsor);
+        }
+
+        // unwraps are checked by setting it immediately above
+        if signer_addr != self.sponsor.unwrap() {
+            return Err(MetaTxRequestError::WrongSigner {
+                expected: self.sponsor.unwrap(),
+                actual: signer_addr,
+            });
+        }
+        let sponsor_signature = self.req.sponsor_sign(sponsor).await?.into();
+        self.sponsor_signature = Some(sponsor_signature);
+        Ok(())
     }
 }
 

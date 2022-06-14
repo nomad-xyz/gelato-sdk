@@ -26,6 +26,7 @@ ethers-signers = { git = "https://github.com/gakonst/ethers-rs", branch = "maste
 
 thiserror = "1.0.31"
 hex = "0.4.3"
+eyre = "0.6.8"
 
 [dev-dependencies]
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features = ["eip712"] }
