@@ -14,8 +14,12 @@ pub(crate) mod ser;
 /// lib utils
 pub(crate) mod utils;
 
+mod client;
+pub use client::*;
+
 /// Forward Request
 pub mod rpc;
 
-mod client;
-pub use client::*;
+/// Builders for complex request types
+pub mod builders;
+pub use builders::*;

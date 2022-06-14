@@ -1207,6 +1207,7 @@ dependencies = [
  "ethers",
  "ethers-core",
  "ethers-signers",
+ "eyre",
  "hex",
  "once_cell",
  "reqwest",
