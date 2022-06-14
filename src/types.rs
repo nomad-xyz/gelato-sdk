@@ -1,7 +1,7 @@
-use ethers_core::types::{Bytes, Address, H256, U256, U64};
+use ethers_core::types::{Address, Bytes, H256, U256, U64};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_repr::{Serialize_repr, Deserialize_repr};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 /// Magic value used to specify the chain-native token
 static NATIVE_TOKEN: Lazy<FeeToken> = Lazy::new(|| {
