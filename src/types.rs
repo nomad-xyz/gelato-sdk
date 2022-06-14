@@ -1,4 +1,4 @@
-use ethers_core::types::{Address};
+use ethers_core::types::Address;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -80,4 +80,3 @@ impl From<Address> for FeeToken {
         Self(token)
     }
 }
-
