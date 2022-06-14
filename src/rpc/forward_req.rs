@@ -128,7 +128,7 @@ impl Eip712 for ForwardRequest {
 
 impl ForwardRequest {
     /// Fill ForwardRequest with sponsor signature and return full request struct
-    pub fn add_signature(self, sponsor_signature: Signature) -> SignedForwardRequest {
+    fn add_signature(self, sponsor_signature: Signature) -> SignedForwardRequest {
         SignedForwardRequest {
             type_id: "ForwardRequest",
             req: self,

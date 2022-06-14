@@ -2,11 +2,12 @@ use ethers_core::{
     abi::{self, Token},
     types::{
         transaction::eip712::{EIP712Domain, Eip712},
-        Address, Bytes, U64,
+        Address, Bytes, Signature, U64,
     },
     utils::keccak256,
 };
 
+use ethers_signers::Signer;
 use serde::{Deserialize, Serialize};
 
 use crate::{ser::RsvSignature, utils::get_meta_box, FeeToken, PaymentType};
@@ -62,6 +63,22 @@ pub enum MetaTxRequestError {
     /// Unknown metabox
     #[error("MetaBox contract unknown for chain id: {0}")]
     UnknownMetaBox(u64),
+    /// Wrong Signer
+    #[error(
+        "Wrong signer. Expected {expected:?}. Attempted to sign with key belonging to: {actual:?}"
+    )]
+    WrongSigner {
+        /// Sponsor in the struct
+        expected: Address,
+        /// Address belonging to the signer
+        actual: Address,
+    },
+    /// Signer errored
+    #[error("{0}")]
+    SignerError(Box<dyn std::error::Error + Send + Sync + 'static>),
+    /// InappropriatePaymentType
+    #[error("Payment type Synchronous may not be used with this request")]
+    InappropriatePaymentType,
 }
 
 impl Eip712 for MetaTxRequest {
@@ -104,6 +121,109 @@ impl Eip712 for MetaTxRequest {
     }
 }
 
+impl MetaTxRequest {
+    /// Fill MetaTxRequest with user & sponsor signatures and return signed
+    /// request struct
+    fn add_signatures(
+        self,
+        user_signature: Signature,
+        sponsor_signature: Option<Signature>,
+    ) -> SignedMetaTxRequest {
+        SignedMetaTxRequest {
+            type_id: "MetaTxRequest",
+            req: self,
+            user_signature: user_signature.into(),
+            sponsor_signature: sponsor_signature.map(Into::into),
+        }
+    }
+
+    async fn get_signature<S>(&self, signer: &S) -> Result<Signature, MetaTxRequestError>
+    where
+        S: ethers_signers::Signer,
+        S::Error: 'static,
+    {
+        signer
+            .sign_typed_data(self)
+            .await
+            .map_err(Box::new)
+            .map_err(|e| MetaTxRequestError::SignerError(e))
+    }
+
+    /// Sign the request with the specified signer
+    ///
+    /// Errors if the signer does not match the user in the struct
+    pub async fn user_sign<S>(&self, signer: &S) -> Result<Signature, MetaTxRequestError>
+    where
+        S: ethers_signers::Signer,
+        S::Error: 'static,
+    {
+        let signer_addr = signer.address();
+        if signer_addr != self.user {
+            return Err(MetaTxRequestError::WrongSigner {
+                expected: self.user,
+                actual: signer_addr,
+            });
+        }
+        if self.payment_type == PaymentType::Synchronous {
+            return Err(MetaTxRequestError::InappropriatePaymentType);
+        }
+
+        self.get_signature(signer).await
+    }
+
+    /// Sponsor the request with the specified signer
+    ///
+    /// Overwrites sponsor if sponsor is None
+    ///
+    /// If this is called after `user_sign`, the tx may need to be re-signed by
+    /// the user
+    pub async fn sponsor_sign<S>(
+        &mut self,
+        sponsor: &S,
+    ) -> Result<Signature, MetaTxRequestError>
+    where
+        S: ethers_signers::Signer,
+        S::Error: 'static,
+    {
+        let signer_addr = sponsor.address();
+        if self.sponsor.is_none() {
+            self.sponsor = Some(signer_addr);
+        }
+
+        // unwraps are checked by setting it immediately above
+        if signer_addr != self.sponsor.unwrap() {
+            return Err(MetaTxRequestError::WrongSigner {
+                expected: self.sponsor.unwrap(),
+                actual: signer_addr,
+            });
+        }
+        if self.payment_type == PaymentType::Synchronous {
+            return Err(MetaTxRequestError::InappropriatePaymentType);
+        }
+        self.get_signature(sponsor).await
+    }
+
+    /// Sign the tx request with a user and (optionally) with a sponsor
+    pub async fn sign<S, T>(mut self, user: &S, sponsor: Option<&T>) -> Result<SignedMetaTxRequest, MetaTxRequestError>
+    where
+        S: Signer,
+        S::Error: 'static,
+        T: Signer,
+        T::Error: 'static
+    {
+        let mut sponsor_signature = None;
+        if let Some(sponsor) = sponsor {
+            sponsor_signature = Some(self.sponsor_sign(sponsor).await?);
+        }
+
+        let user_signature = self.user_sign(user).await?;
+
+        Ok(self.add_signatures(user_signature, sponsor_signature))
+    }
+
+
+}
+
 /// Signed Gelato relay MetaTxRequest
 ///
 /// <https://docs.gelato.network/developer-products/gelato-relay-sdk/request-types#metatxrequest>
@@ -117,6 +237,9 @@ impl Eip712 for MetaTxRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SignedMetaTxRequest {
+    /// Just guessing here :)
+    type_id: &'static str,
+
     /// Metatx request
     #[serde(flatten)]
     req: MetaTxRequest,
@@ -126,4 +249,24 @@ pub struct SignedMetaTxRequest {
 
     /// EIP-712 signature over the meta-tx request
     sponsor_signature: Option<RsvSignature>,
+}
+
+impl SignedMetaTxRequest {
+    /// Get the attached sponsor signature (if any)
+    pub fn sponsor_signature(&self) -> Option<Signature> {
+        self.sponsor_signature.map(Into::into)
+    }
+
+    /// Get the attached user signature
+    pub fn user_signature(&self) -> Signature {
+        *self.user_signature
+    }
+}
+
+impl std::ops::Deref for SignedMetaTxRequest {
+    type Target = MetaTxRequest;
+
+    fn deref(&self) -> &Self::Target {
+        &self.req
+    }
 }
