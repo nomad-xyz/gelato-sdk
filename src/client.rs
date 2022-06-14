@@ -9,22 +9,22 @@ use std::str::FromStr;
 use crate::{rpc, FeeToken};
 
 static DEFAULT_URL: Lazy<reqwest::Url> =
-Lazy::new(|| "https://relay.gelato.digital/".parse().unwrap());
+    Lazy::new(|| "https://relay.gelato.digital/".parse().unwrap());
 
 /// A Gelato Relay Client
 #[derive(Debug, Clone)]
 pub struct GelatoClient {
-url: reqwest::Url,
-client: reqwest::Client,
+    url: reqwest::Url,
+    client: reqwest::Client,
 }
 
 impl Default for GelatoClient {
-fn default() -> Self {
-    Self {
-        url: DEFAULT_URL.clone(),
-        client: Default::default(),
+    fn default() -> Self {
+        Self {
+            url: DEFAULT_URL.clone(),
+            client: Default::default(),
+        }
     }
-}
 }
 
 impl GelatoClient {
@@ -101,7 +101,10 @@ impl GelatoClient {
     ///
     /// Because payment is of type `Synchronous`, the target contract MUST
     /// pay for its gas in `params.fee_token` during call forwarding.
-    pub async fn send_forward_call(&self, params: &rpc::ForwardCall) -> Result<rpc::RelayResponse, reqwest::Error> {
+    pub async fn send_forward_call(
+        &self,
+        params: &rpc::ForwardCall,
+    ) -> Result<rpc::RelayResponse, reqwest::Error> {
         self.client
             .post(self.send_forward_request_url(params.chain_id))
             .json(&params)
@@ -147,14 +150,17 @@ impl GelatoClient {
     /// appropriate Gelato Relay's smart contract already verifies user and sponsor
     /// signatures. user is the EOA address that wants to interact with the dApp,
     /// while sponsor is the account that pays fees.
-    pub async fn send_meta_tx_request(&self, params: &rpc::SignedMetaTxRequest) -> Result<rpc::RelayResponse, reqwest::Error> {
+    pub async fn send_meta_tx_request(
+        &self,
+        params: &rpc::SignedMetaTxRequest,
+    ) -> Result<rpc::RelayResponse, reqwest::Error> {
         self.client
-        .post(self.send_forward_request_url(params.chain_id))
-        .json(&params)
-        .send()
-        .await?
-        .json()
-        .await
+            .post(self.send_forward_request_url(params.chain_id))
+            .json(&params)
+            .send()
+            .await?
+            .json()
+            .await
     }
 
     /// Check if a chain id is supported by Gelato API
