@@ -211,6 +211,16 @@ impl SignedForwardRequest {
     pub fn sponsor_signature(&self) -> Signature {
         *self.sponsor_signature
     }
+
+    /// Re-sponsor this request. Get a new signed version with the sponsor set
+    /// to the identity of the new signer
+    pub async fn responsor<S>(&self, signer: &S) -> Result<Self, ForwardRequestError>
+    where
+        S: ethers_signers::Signer,
+        S::Error: 'static,
+    {
+        self.req.clone().sponsor(signer).await
+    }
 }
 
 impl std::ops::Deref for SignedForwardRequest {

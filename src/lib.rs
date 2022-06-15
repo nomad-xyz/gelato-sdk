@@ -13,6 +13,7 @@ pub use types::*;
 pub(crate) mod ser;
 /// lib utils
 pub(crate) mod utils;
+pub use utils::{get_forwarder, get_meta_box};
 
 mod client;
 pub use client::*;

@@ -5,6 +5,13 @@ use once_cell::sync::Lazy;
 
 pub static CHAIN_ID_TO_FORWARDER: Lazy<HashMap<u64, Address>> = Lazy::new(|| {
     HashMap::from([
+        // Ethereum
+        (
+            1,
+            "0x5ca448e53e77499222741DcB6B3c959Fa829dAf2"
+                .parse()
+                .expect("!forwarder proxy"),
+        ),
         // Kovan
         (
             42,
@@ -58,6 +65,7 @@ pub fn get_forwarder(chain_id: u64) -> Option<Address> {
 /// Todo: Populate
 pub static CHAIN_ID_TO_META_BOX: Lazy<HashMap<u64, Address>> = Lazy::new(Default::default);
 
+/// Get the metabox for a chain id
 pub fn get_meta_box(chain_id: u64) -> Option<Address> {
     CHAIN_ID_TO_META_BOX.get(&chain_id).copied()
 }
