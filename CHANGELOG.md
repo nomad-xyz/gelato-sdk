@@ -1,6 +1,6 @@
 # Changelog
 
-# Unreleased
+# v0.1.0-beta
 
 - feature: builders for MetaTxRequest & ForwardRequest
 - feature: support MetaTxRequest (user-driven, sponsor-allowed)
