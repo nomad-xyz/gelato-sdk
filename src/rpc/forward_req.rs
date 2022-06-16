@@ -33,6 +33,7 @@ pub struct ForwardRequest {
     /// Chain id
     pub chain_id: u64,
     /// Address of dApp's smart contract to call.
+    #[serde(serialize_with = "crate::ser::serialize_checksum_addr")]
     pub target: Address,
     /// Payload for `target`.
     pub data: Bytes,
@@ -41,10 +42,13 @@ pub struct ForwardRequest {
     /// Type identifier for Gelato's payment. Can be 1, 2 or 3.
     pub payment_type: PaymentType,
     /// Maximum fee sponsor is willing to pay Gelato Executors
+    #[serde(with = "crate::ser::decimal_u64_ser")]
     pub max_fee: U64,
     /// Gas limit
+    #[serde(with = "crate::ser::decimal_u64_ser")]
     pub gas: U64,
     /// EOA address that pays Gelato Executors.
+    #[serde(serialize_with = "crate::ser::serialize_checksum_addr")]
     pub sponsor: Address,
     /// Chain ID of where sponsor holds a Gas Tank balance with Gelato
     /// Usually the same as `chain_id`
@@ -271,6 +275,12 @@ mod test {
     fn it_computes_domain_separator() {
         let domain_separator = (&*REQUEST).domain_separator().unwrap();
 
+        let fake_sig = (0..65u8).collect::<Vec<_>>();
+        let fake_sig = Signature::try_from(fake_sig.as_ref()).unwrap();
+        let filled = REQUEST.clone().add_signature(fake_sig);
+
+        print!("{}", serde_json::to_string_pretty(&filled).unwrap());
+
         assert_eq!(
             format!("0x{}", hex::encode(domain_separator)),
             DOMAIN_SEPARATOR,
@@ -286,6 +296,7 @@ mod test {
 
         let hex_sig = format!("0x{}", &signature);
         assert_eq!(hex_sig, SPONSOR_SIGNATURE);
+
         assert_eq!(
             serde_json::to_value(&signature).unwrap(),
             serde_json::Value::String(SPONSOR_SIGNATURE.to_owned()),

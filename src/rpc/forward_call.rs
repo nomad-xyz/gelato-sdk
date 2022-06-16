@@ -18,11 +18,13 @@ pub struct ForwardCall {
     /// Chain ID
     pub chain_id: u64,
     /// The contract to call
+    #[serde(serialize_with = "crate::ser::serialize_checksum_addr")]
     pub target: Address,
     /// The payload to pass to that contrct
     pub data: Bytes,
     /// The token in which fees will be paid
     pub fee_token: FeeToken,
     /// The gas limit for execution
+    #[serde(with = "crate::ser::decimal_u64_ser")]
     pub gas: U64,
 }

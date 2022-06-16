@@ -11,6 +11,7 @@ pub struct EstimatedFeeRequest {
     /// Payment token
     pub payment_token: FeeToken,
     /// Gas limit
+    #[serde(with = "crate::ser::decimal_u64_ser")]
     pub gas_limit: U64,
     /// Whether this is high priority
     pub is_high_priority: bool,

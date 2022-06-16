@@ -51,7 +51,7 @@ pub enum PaymentType {
 /// magic value indicates "eth" or the native asset of the chain. This FeeToken
 /// must be allowlisted by Gelato validators
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub struct FeeToken(Address);
+pub struct FeeToken(#[serde(serialize_with = "crate::ser::serialize_checksum_addr")] Address);
 
 impl std::ops::Deref for FeeToken {
     type Target = Address;

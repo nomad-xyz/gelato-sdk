@@ -93,6 +93,7 @@ pub struct Check {
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
     /// Transaction target
+    #[serde(serialize_with = "crate::ser::serialize_checksum_addr")]
     pub to: Address,
     /// Transaction input data
     pub data: Bytes,
@@ -105,10 +106,13 @@ pub struct Payload {
 #[serde(rename_all = "camelCase")]
 pub struct FeeData {
     /// Gas Price
+    #[serde(with = "crate::ser::json_u256_ser")]
     pub gas_price: U256,
     /// Max fee per gas
+    #[serde(with = "crate::ser::json_u256_ser")]
     pub max_fee_per_gas: U256,
     /// Max priority fee per gas
+    #[serde(with = "crate::ser::json_u256_ser")]
     pub max_priority_fee_per_gas: U256,
 }
 

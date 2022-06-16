@@ -30,6 +30,7 @@ pub struct MetaTxRequest {
     /// Chain id
     pub chain_id: u64,
     /// Address of dApp's smart contract to call.
+    #[serde(serialize_with = "crate::ser::serialize_checksum_addr")]
     pub target: Address,
     /// Payload for `target`.
     pub data: Bytes,
@@ -38,10 +39,13 @@ pub struct MetaTxRequest {
     /// Type identifier for Gelato's payment. Can be 1, 2 or 3.
     pub payment_type: PaymentType, // 1 = gas tank
     /// Maximum fee sponsor is willing to pay Gelato Executors
+    #[serde(with = "crate::ser::decimal_u64_ser")]
     pub max_fee: U64,
     /// Gas limit
+    #[serde(with = "crate::ser::decimal_u64_ser")]
     pub gas: U64,
     /// EOA of dapp's user
+    #[serde(serialize_with = "crate::ser::serialize_checksum_addr")]
     pub user: Address,
     /// EOA address that pays Gelato Executors.
     pub sponsor: Option<Address>,
