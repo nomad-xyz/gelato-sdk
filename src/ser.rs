@@ -85,22 +85,28 @@ pub(crate) mod json_u256_ser {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-    struct JsonU256 {
+    struct JsonU256<'a> {
         hex: U256,
+        #[serde(rename = "type")]
+        t: &'a str,
     }
 
     pub(crate) fn serialize<S>(val: &U256, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        (JsonU256 { hex: *val }).serialize(serializer)
+        (JsonU256 {
+            hex: *val,
+            t: "BigNumber",
+        })
+        .serialize(serializer)
     }
 
     pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<U256, D::Error>
     where
         D: Deserializer<'de>,
     {
-        JsonU256::deserialize(deserializer).map(|val| val.hex)
+        JsonU256::<'de>::deserialize(deserializer).map(|val| val.hex)
     }
 }
 

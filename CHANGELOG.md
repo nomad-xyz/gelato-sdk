@@ -2,6 +2,7 @@
 
 # Unreleased
 
+- fix: serialize JsonU256 properly with type
 - fix: serialize U64s as decimal strings
 - feature: re-sponsor signed forward requests
 - fix: export `get_forwarder` and `get_meta_box`
