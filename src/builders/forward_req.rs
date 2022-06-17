@@ -172,8 +172,11 @@ impl ForwardRequestBuilder {
         S: ethers_signers::Signer,
         S::Error: 'static,
     {
+        if self.chain_id.is_none() {
+            self.chain_id = Some(sponsor.chain_id());
+        }
         self.sponsor = Some(sponsor.address());
-        self.chain_id = Some(sponsor.chain_id());
+        self.sponsor_chain_id = Some(sponsor.chain_id());
         SponsoredForwardRequestBuilder {
             builder: self,
             sponsor,
@@ -225,7 +228,7 @@ impl ForwardRequestBuilder {
             sponsor_chain_id: self.sponsor_chain_id.unwrap_or(1),
             nonce: self.nonce.unwrap_or_default(),
             enforce_sponsor_nonce: self.enforce_sponsor_nonce.unwrap_or(true),
-            enforce_sponsor_nonce_ordering: self.enforce_sponsor_nonce_ordering,
+            enforce_sponsor_nonce_ordering: self.enforce_sponsor_nonce_ordering.unwrap_or(true),
         })
     }
 }

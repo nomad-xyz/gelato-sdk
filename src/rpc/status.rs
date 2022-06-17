@@ -43,8 +43,10 @@ pub struct TransactionStatus {
     #[serde(rename = "created_at")]
     pub created_at: String, // date
     /// Info from last check
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_check: Option<CheckOrDate>,
     /// Execution info
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub execution: Option<Execution>,
     /// Last execution date/time string
     pub last_execution: String, // date

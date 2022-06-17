@@ -61,7 +61,7 @@ pub struct ForwardRequest {
     pub enforce_sponsor_nonce: bool,
     /// Whether or not ordering matters for concurrently submitted transactions.
     /// Defaults to `true` if not provided.
-    pub enforce_sponsor_nonce_ordering: Option<bool>,
+    pub enforce_sponsor_nonce_ordering: bool,
 }
 
 /// ForwardRequest error
@@ -122,7 +122,7 @@ impl Eip712 for ForwardRequest {
             Token::Uint(self.sponsor_chain_id.into()),
             Token::Uint(self.nonce.into()),
             Token::Bool(self.enforce_sponsor_nonce),
-            Token::Bool(self.enforce_sponsor_nonce_ordering.unwrap_or(true)),
+            Token::Bool(self.enforce_sponsor_nonce_ordering),
         ]);
 
         Ok(keccak256(encoded_request))
@@ -268,7 +268,7 @@ mod test {
         sponsor_chain_id: 42,
         nonce: 0,
         enforce_sponsor_nonce: false,
-        enforce_sponsor_nonce_ordering: Some(false),
+        enforce_sponsor_nonce_ordering: false,
     });
 
     #[test]

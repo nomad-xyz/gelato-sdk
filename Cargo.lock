@@ -1216,6 +1216,7 @@ dependencies = [
  "serde_repr",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

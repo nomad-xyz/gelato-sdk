@@ -48,15 +48,18 @@ pub struct MetaTxRequest {
     #[serde(serialize_with = "crate::ser::serialize_checksum_addr")]
     pub user: Address,
     /// EOA address that pays Gelato Executors.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sponsor: Option<Address>,
     /// Chain ID of where sponsor holds a Gas Tank balance with Gelato
     /// Usually the same as `chain_id`
     /// relevant for payment type 1: AsyncGasTank`
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sponsor_chain_id: Option<u64>,
     /// Smart contract nonce for sponsor to sign.
     pub nonce: usize,
     /// Deadline for executing this MetaTxRequest. If set to 0, no deadline is
     /// enforced
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub deadline: Option<u64>,
 }
 
@@ -262,6 +265,7 @@ pub struct SignedMetaTxRequest {
     user_signature: RsvSignature,
 
     /// EIP-712 signature over the meta-tx request
+    #[serde(skip_serializing_if = "Option::is_none")]
     sponsor_signature: Option<RsvSignature>,
 }
 
