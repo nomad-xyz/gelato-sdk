@@ -28,6 +28,9 @@ thiserror = "1.0.31"
 hex = "0.4.3"
 eyre = "0.6.8"
 tracing = "0.1.35"
+futures-util = "0.3.21"
+pin-project = "1.0.10"
+futures-timer = "3.0.2"
 
 [dev-dependencies]
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features = ["eip712"] }

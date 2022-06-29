@@ -85,9 +85,10 @@ pub struct Check {
     pub task_state: TaskState,
     /// Message string
     pub message: Option<String>,
-    /// Creation date/time string
-    #[serde(rename = "created_at")]
-    pub created_at: Option<String>,
+    /// Initial request details
+    pub payload: Payload,
+    /// Reason for status (if any). This often has a solidity revert message
+    pub reason: Option<String>,
 }
 
 /// Transaction payload information
