@@ -62,7 +62,7 @@ type PinBoxFut<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 /// potentially recoverable backend error. Unrecoverable backend errors (e.g.
 /// deserialization errors or HTTP 500-series statuses are not retried.
 #[pin_project(project = TaskProj)]
-pub struct GelatoTask<'a> {
+pub struct GelatoTask<'a, P> {
     /// Task Id
     id: H256,
     /// Client
@@ -73,6 +73,8 @@ pub struct GelatoTask<'a> {
     retries: usize,
     /// delay between requests
     delay: Duration,
+    /// request payload
+    payload: P,
 }
 
 const DEFAULT_RETRIES: usize = 5;
@@ -87,15 +89,15 @@ enum TaskState<'a> {
     Complete,
 }
 
-impl<'a> std::fmt::Debug for GelatoTask<'a> {
+impl<'a, P> std::fmt::Debug for GelatoTask<'a, P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Task").field("id", &self.id).finish()
     }
 }
 
-impl<'a> GelatoTask<'a> {
+impl<'a, P> GelatoTask<'a, P> {
     /// Instantiate a Task
-    pub fn new(id: H256, client: &'a GelatoClient) -> Self {
+    pub fn new(id: H256, client: &'a GelatoClient, payload: P) -> Self {
         let delay = Duration::from_secs(DEFAULT_DELAY);
         Self {
             id,
@@ -103,6 +105,7 @@ impl<'a> GelatoTask<'a> {
             state: TaskState::Delaying(Box::pin(Delay::new(delay))),
             retries: DEFAULT_RETRIES,
             delay,
+            payload,
         }
     }
 
@@ -151,12 +154,12 @@ macro_rules! delay_it {
     };
 }
 
-impl<'a> Future for GelatoTask<'a> {
+impl<'a, P> Future for GelatoTask<'a, P> {
     type Output = Result<Execution, TaskError>;
 
     #[tracing::instrument(skip(self), fields(task_id = ?self.id, retries_remaining = self.retries))]
     fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
-        let this: TaskProj = self.project();
+        let this: TaskProj<_> = self.project();
 
         let status_fut = match this.state {
             TaskState::Delaying(delay) => {

@@ -243,25 +243,26 @@ impl GelatoClient {
     }
 
     /// Create a future that will track the status of a task
-    pub fn track_task(&self, task_id: H256) -> GelatoTask {
-        GelatoTask::new(task_id, self)
+    pub fn track_task<P>(&self, task_id: H256, payload: P) -> GelatoTask<P> {
+        GelatoTask::new(task_id, self, payload)
     }
 
     /// Dispatch a forward request. Get a future tracking its status
     pub async fn forward_request(
         &self,
         params: &rpc::SignedForwardRequest,
-    ) -> Result<GelatoTask<'_>, reqwest::Error> {
+    ) -> Result<GelatoTask<'_, rpc::SignedForwardRequest>, reqwest::Error> {
         let resp = self.send_forward_request(params).await?;
-        Ok(GelatoTask::new(resp.task_id(), self))
+        Ok(self.track_task(resp.task_id(), params.clone()))
+
     }
 
     /// Dispatch a meta tx request. Get a future tracking its status
     pub async fn meta_tx_request(
         &self,
         params: &rpc::SignedMetaTxRequest,
-    ) -> Result<GelatoTask<'_>, reqwest::Error> {
+    ) -> Result<GelatoTask<'_, rpc::SignedMetaTxRequest>, reqwest::Error> {
         let resp = self.send_meta_tx_request(params).await?;
-        Ok(GelatoTask::new(resp.task_id(), self))
+        Ok(self.track_task(resp.task_id(), params.clone()))
     }
 }
