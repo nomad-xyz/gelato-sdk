@@ -79,10 +79,12 @@ const DEFAULT_RETRIES: usize = 5;
 const DEFAULT_DELAY: u64 = 15;
 
 enum TaskState<'a> {
-    /// Initial delay to ensure the GettingTx loop doesn't immediately fail
+    // Initial delay to ensure the GettingTx loop doesn't immediately fail
     Delaying(Pin<Box<Delay>>),
-    ///
+    // Waiting for API response
     Requesting(PinBoxFut<'a, Result<Option<rpc::TransactionStatus>, reqwest::Error>>),
+    // future is over
+    Complete,
 }
 
 impl<'a> std::fmt::Debug for GelatoTask<'a> {
@@ -135,6 +137,12 @@ macro_rules! make_request {
     };
 }
 
+macro_rules! complete {
+    ($this:ident) => {
+        *$this.state = TaskState::Complete;
+    };
+}
+
 macro_rules! delay_it {
     ($cx:ident, $this:ident) => {
         *$this.state = TaskState::Delaying(Box::pin(Delay::new(*$this.delay)));
@@ -151,26 +159,36 @@ impl<'a> Future for GelatoTask<'a> {
         let this: TaskProj = self.project();
 
         let status_fut = match this.state {
-            // early returns only :)
             TaskState::Delaying(delay) => {
+                // if the delay isn't elapsed, shortcut out
                 ready!(delay.as_mut().poll(cx));
+                // change state to requesting
                 make_request!(cx, this);
             }
-            // just unpack the future
+            // unpack the future from the state
             TaskState::Requesting(fut) => fut,
+            // should never happen. indicates faulty program
+            TaskState::Complete => panic!("polled completed task"),
         };
 
+        // if the server hasn't responded, shortcut out
         let status = ready!(status_fut.as_mut().poll(cx));
 
+        // if the server returned undefined, decrement retries. according to
+        // gelato docs this is a backend error
         if let Ok(None) = status {
             tracing::warn!("Undefined status while polling task");
             if *this.retries == 0 {
+                complete!(this);
                 return Poll::Ready(Err(TaskError::TooManyRetries));
             }
             *this.retries -= 1;
         }
 
+        // if reqwest returns a deser or server error, end the future
         if let Err(e) = status {
+            tracing::error!(error = %e, "Reqwest error in pending tx");
+            complete!(this);
             return Poll::Ready(Err(TaskError::ReqwestError(e)));
         }
 
@@ -180,10 +198,12 @@ impl<'a> Future for GelatoTask<'a> {
             ..
         } = status.expect("checked").expect("checked");
 
+        // if there's no last check, we poll again later
         if last_check.is_none() {
             delay_it!(cx, this);
         }
 
+        // if the last check is a timestamp, we poll again later
         let last_check = last_check.expect("checked");
         let last_check = match last_check {
             CheckOrDate::Date(_) => {
@@ -193,22 +213,44 @@ impl<'a> Future for GelatoTask<'a> {
         };
 
         match last_check.task_state {
+            // execution is succesful. return the execution object
+            // we assume that there is NO VALID CASE where the API returns
+            // `ExecSuccess` but `execution` is undefined
             rpc::TaskState::ExecSuccess => {
+                complete!(this);
                 Poll::Ready(Ok(execution.expect("exists if status is sucess")))
             }
-            rpc::TaskState::ExecReverted => Poll::Ready(Err(TaskError::Reverted {
-                execution: execution.expect("exists if status is reverted"),
-                last_check: Box::new(last_check),
-            })),
-            rpc::TaskState::Blacklisted => Poll::Ready(Err(TaskError::BlackListed {
-                message: last_check.message,
-                reason: last_check.reason,
-            })),
-            rpc::TaskState::Cancelled => Poll::Ready(Err(TaskError::Cancelled {
-                message: last_check.message,
-                reason: last_check.reason,
-            })),
-            rpc::TaskState::NotFound => Poll::Ready(Err(TaskError::NotFound)),
+            // execution occurred but reverted
+            // return an error
+            rpc::TaskState::ExecReverted => {
+                complete!(this);
+                Poll::Ready(Err(TaskError::Reverted {
+                    execution: execution.expect("exists if status is reverted"),
+                    last_check: Box::new(last_check),
+                }))
+            }
+            // request was blacklisted by backend
+            rpc::TaskState::Blacklisted => {
+                complete!(this);
+                Poll::Ready(Err(TaskError::BlackListed {
+                    message: last_check.message,
+                    reason: last_check.reason,
+                }))
+            }
+            // request was cancelled by backend
+            rpc::TaskState::Cancelled => {
+                complete!(this);
+                Poll::Ready(Err(TaskError::Cancelled {
+                    message: last_check.message,
+                    reason: last_check.reason,
+                }))
+            }
+            // request not found by backend
+            rpc::TaskState::NotFound => {
+                complete!(this);
+                Poll::Ready(Err(TaskError::NotFound))
+            },
+            // anything else is a continuation
             _ => {
                 delay_it!(cx, this);
             }
