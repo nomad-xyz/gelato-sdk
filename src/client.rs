@@ -1,8 +1,7 @@
 use futures_timer::Delay;
 use futures_util::ready;
 use pin_project::pin_project;
-/// Re-export reqwest for convenience
-pub use reqwest;
+
 use reqwest::{IntoUrl, Url};
 
 use ethers_core::types::{H256, U64};
