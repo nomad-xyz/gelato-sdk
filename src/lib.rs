@@ -25,5 +25,9 @@ pub mod rpc;
 pub mod builders;
 pub use builders::*;
 
+/// Task status future
+pub mod task;
+pub use task::*;
+
 /// Re-export reqwest for convenience
 pub use reqwest;
