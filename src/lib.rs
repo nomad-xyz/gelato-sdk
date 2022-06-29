@@ -24,3 +24,6 @@ pub mod rpc;
 /// Builders for complex request types
 pub mod builders;
 pub use builders::*;
+
+/// Re-export reqwest for convenience
+pub use reqwest;
