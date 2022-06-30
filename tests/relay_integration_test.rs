@@ -7,7 +7,7 @@ async fn simple_queries() -> Result<(), reqwest::Error> {
 
     // Ensure calling get chains returns non-empty array
     let chains = gelato.get_gelato_relay_chains().await.unwrap();
-    assert!(chains.len() > 0);
+    assert!(!chains.is_empty());
 
     // Ensure calling get task status returns a result
     let task_status = gelato
