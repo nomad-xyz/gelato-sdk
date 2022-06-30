@@ -252,7 +252,7 @@ impl<'a, P> Future for GelatoTask<'a, P> {
             rpc::TaskState::NotFound => {
                 complete!(this);
                 Poll::Ready(Err(TaskError::NotFound))
-            },
+            }
             // anything else is a continuation
             _ => {
                 delay_it!(cx, this);

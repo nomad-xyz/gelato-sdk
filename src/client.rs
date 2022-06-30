@@ -254,12 +254,12 @@ impl GelatoClient {
     ) -> Result<GelatoTask<'_, rpc::SignedForwardRequest>, reqwest::Error> {
         let resp = self.send_forward_request(params).await?;
         Ok(self.track_task(resp.task_id(), params.clone()))
-
     }
 
     /// Dispatch a meta tx request. Get a future tracking its status
     pub async fn meta_tx_request(
         &self,
+
         params: &rpc::SignedMetaTxRequest,
     ) -> Result<GelatoTask<'_, rpc::SignedMetaTxRequest>, reqwest::Error> {
         let resp = self.send_meta_tx_request(params).await?;
