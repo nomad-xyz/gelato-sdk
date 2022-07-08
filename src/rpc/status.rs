@@ -4,27 +4,18 @@ use ethers_core::types::{Address, Bytes, H256, U256};
 
 /// Response to the GetTaskStatus api call. Contains an array of task statuses
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct TaskStatusResponse {
-    data: Vec<TransactionStatus>,
-}
-
-impl std::ops::Deref for TaskStatusResponse {
-    type Target = Vec<TransactionStatus>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}
-
-impl IntoIterator for TaskStatusResponse {
-    type Item = TransactionStatus;
-
-    type IntoIter = <Vec<TransactionStatus> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.data.into_iter()
-    }
+#[serde(untagged, rename_all = "camelCase")]
+pub enum TaskStatusResponse {
+    /// Data
+    Data {
+        /// Status data
+        data: Vec<TransactionStatus>,
+    },
+    /// Response with messages
+    Error {
+        /// error message
+        message: String,
+    },
 }
 
 /// A TransactionStatus object
@@ -74,20 +65,30 @@ pub enum CheckOrDate {
     /// Date
     Date(String),
     /// Check
-    Check(Check),
+    Check(Box<Check>),
 }
 
 /// Check info for a
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Check {
+    /// Creation time
+    #[serde(
+        default,
+        rename = "created_at",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub created_at: Option<String>,
     /// Task state at this check
     pub task_state: TaskState,
     /// Message string
     pub message: Option<String>,
-    /// Creation date/time string
-    #[serde(rename = "created_at")]
-    pub created_at: Option<String>,
+    /// Initial request details
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payload: Option<Payload>,
+    /// Reason for status (if any). This often has a solidity revert message
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// Transaction payload information

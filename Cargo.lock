@@ -1208,8 +1208,11 @@ dependencies = [
  "ethers-core",
  "ethers-signers",
  "eyre",
+ "futures-timer",
+ "futures-util",
  "hex",
  "once_cell",
+ "pin-project",
  "reqwest",
  "serde",
  "serde_json",
@@ -1217,6 +1220,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]

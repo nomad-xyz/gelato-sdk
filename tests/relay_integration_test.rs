@@ -7,7 +7,7 @@ async fn simple_queries() -> Result<(), reqwest::Error> {
 
     // Ensure calling get chains returns non-empty array
     let chains = gelato.get_gelato_relay_chains().await.unwrap();
-    assert!(chains.len() > 0);
+    assert!(!chains.is_empty());
 
     // Ensure calling get task status returns a result
     let task_status = gelato
@@ -16,9 +16,13 @@ async fn simple_queries() -> Result<(), reqwest::Error> {
                 .parse()
                 .unwrap(),
         )
-        .await
-        .unwrap();
-    assert!(task_status.is_some());
+        .await;
+
+    match task_status {
+        Err(ClientError::Other(_)) => {}
+        Ok(_) => {}
+        _ => panic!("Incorrect status {:?}", task_status),
+    }
 
     // Ensure we calling estimate fee on mainnet ethereum doesn't return error
     let mainnet: u64 = chains[0];
@@ -28,7 +32,7 @@ async fn simple_queries() -> Result<(), reqwest::Error> {
             "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 .parse::<H160>()
                 .unwrap(),
-            100_000.into(),
+            100_000u64.into(),
             true,
         )
         .await
