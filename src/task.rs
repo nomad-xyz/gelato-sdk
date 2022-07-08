@@ -229,7 +229,7 @@ impl<'a, P> Future for GelatoTask<'a, P> {
                 complete!(this);
                 Poll::Ready(Err(TaskError::Reverted {
                     execution: execution.expect("exists if status is reverted"),
-                    last_check: Box::new(last_check),
+                    last_check,
                 }))
             }
             // request was blacklisted by backend

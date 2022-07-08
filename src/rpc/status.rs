@@ -74,20 +74,29 @@ pub enum CheckOrDate {
     /// Date
     Date(String),
     /// Check
-    Check(Check),
+    Check(Box<Check>),
 }
 
 /// Check info for a
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Check {
+    /// Creation time
+    #[serde(
+        default,
+        rename = "created_at",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub created_at: Option<String>,
     /// Task state at this check
     pub task_state: TaskState,
     /// Message string
     pub message: Option<String>,
     /// Initial request details
-    pub payload: Payload,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payload: Option<Payload>,
     /// Reason for status (if any). This often has a solidity revert message
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
 
