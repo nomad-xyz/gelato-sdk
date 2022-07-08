@@ -12,15 +12,15 @@ use std::{
 
 use crate::{
     rpc::{self, Check, CheckOrDate, Execution},
-    GelatoClient,
+    ClientError, ClientResult, GelatoClient,
 };
 
 /// Gelato Task error
 #[derive(Debug, thiserror::Error)]
 pub enum TaskError {
-    /// reqwest
+    /// Client
     #[error("{0}")]
-    ReqwestError(#[from] reqwest::Error),
+    ClientError(#[from] crate::ClientError),
     /// cancelled by backend
     #[error("Cancelled by backend")]
     Cancelled {
@@ -84,7 +84,7 @@ enum TaskState<'a> {
     // Initial delay to ensure the GettingTx loop doesn't immediately fail
     Delaying(Pin<Box<Delay>>),
     // Waiting for API response
-    Requesting(PinBoxFut<'a, Result<Option<rpc::TransactionStatus>, reqwest::Error>>),
+    Requesting(PinBoxFut<'a, ClientResult<rpc::TransactionStatus>>),
     // future is over
     Complete,
 }
@@ -179,27 +179,28 @@ impl<'a, P> Future for GelatoTask<'a, P> {
 
         // if the server returned undefined, decrement retries. according to
         // gelato docs this is a backend error
-        if let Ok(None) = status {
+        if let Err(ClientError::Other(_)) = status {
             tracing::warn!("Undefined status while polling task");
             if *this.retries == 0 {
                 complete!(this);
                 return Poll::Ready(Err(TaskError::TooManyRetries));
             }
             *this.retries -= 1;
+            delay_it!(cx, this);
         }
 
         // if reqwest returns a deser or server error, end the future
         if let Err(e) = status {
             tracing::error!(error = %e, "Reqwest error in pending tx");
             complete!(this);
-            return Poll::Ready(Err(TaskError::ReqwestError(e)));
+            return Poll::Ready(Err(TaskError::ClientError(e)));
         }
 
         let rpc::TransactionStatus {
             last_check,
             execution,
             ..
-        } = status.expect("checked").expect("checked");
+        } = status.expect("checked");
 
         // if there's no last check, we poll again later
         if last_check.is_none() {
