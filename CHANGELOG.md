@@ -2,6 +2,7 @@
 
 # Unreleased
 
+- feature: WARN log text response of RPC requests that fail json deser
 - fix: serialize JsonU256 properly with type
 - fix: serialize U64s as decimal strings
 - feature: re-sponsor signed forward requests
