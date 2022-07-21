@@ -4,6 +4,7 @@ use ethers_core::types::{H256, U64};
 use once_cell::sync::Lazy;
 
 use crate::{
+    json_get, json_post,
     rpc::{self},
     task::GelatoTask,
     FeeToken,
@@ -21,6 +22,9 @@ pub enum ClientError {
     /// Url Parsing Error
     #[error("{0}")]
     UrlParse(#[from] url::ParseError),
+    /// Serde Json deser Error
+    #[error("{0}")]
+    SerdeError(#[from] serde_json::Error),
     /// Other Error
     #[error("{0}")]
     Other(String),
@@ -61,10 +65,6 @@ impl GelatoClient {
         })
     }
 
-    async fn get(&self, url: Url) -> ClientResult<reqwest::Response> {
-        self.client.get(url).send().await.map_err(Into::into)
-    }
-
     /// Instantiate a new client with a specific URL and a reqwest Client
     ///
     /// # Errors
@@ -93,10 +93,11 @@ impl GelatoClient {
         params: &rpc::RelayRequest,
         chain_id: u64,
     ) -> ClientResult<rpc::RelayResponse> {
-        let url = self.send_relay_transaction_url(chain_id);
-        let res = reqwest::Client::new().post(url).json(params).send().await?;
-
-        res.json().await.map_err(Into::into)
+        json_post!(
+            self.client,
+            self.send_relay_transaction_url(chain_id),
+            params,
+        )
     }
 
     fn send_forward_request_url(&self, chain_id: u64) -> Url {
@@ -120,14 +121,11 @@ impl GelatoClient {
         &self,
         params: &rpc::ForwardCall,
     ) -> ClientResult<rpc::RelayResponse> {
-        self.client
-            .post(self.send_forward_request_url(params.chain_id))
-            .json(&params)
-            .send()
-            .await?
-            .json()
-            .await
-            .map_err(Into::into)
+        json_post!(
+            self.client,
+            self.send_forward_request_url(params.chain_id),
+            params
+        )
     }
 
     /// Send a transaction forward request
@@ -147,14 +145,11 @@ impl GelatoClient {
         &self,
         params: &rpc::SignedForwardRequest,
     ) -> ClientResult<rpc::RelayResponse> {
-        self.client
-            .post(self.send_forward_request_url(params.chain_id))
-            .json(&params)
-            .send()
-            .await?
-            .json()
-            .await
-            .map_err(Into::into)
+        json_post!(
+            self.client,
+            self.send_forward_request_url(params.chain_id),
+            params,
+        )
     }
 
     /// Gelato relay MetaTxRequest
@@ -171,14 +166,11 @@ impl GelatoClient {
         &self,
         params: &rpc::SignedMetaTxRequest,
     ) -> ClientResult<rpc::RelayResponse> {
-        self.client
-            .post(self.send_forward_request_url(params.chain_id))
-            .json(&params)
-            .send()
-            .await?
-            .json()
-            .await
-            .map_err(Into::into)
+        json_post!(
+            self.client,
+            self.send_forward_request_url(params.chain_id),
+            params,
+        )
     }
 
     /// Check if a chain id is supported by Gelato API
@@ -192,8 +184,12 @@ impl GelatoClient {
 
     /// Get a list of supported chains
     pub async fn get_gelato_relay_chains(&self) -> ClientResult<Vec<u64>> {
-        let res = self.client.get(self.relay_chains_url()).send().await?;
-        Ok(res.json::<rpc::RelayChainsResponse>().await?.relays())
+        Ok(json_get!(
+            self.client,
+            self.relay_chains_url(),
+            rpc::RelayChainsResponse
+        )?
+        .relays())
     }
 
     fn estimated_fee_url(
@@ -226,14 +222,12 @@ impl GelatoClient {
         gas_limit: U64,
         is_high_priority: bool,
     ) -> ClientResult<U64> {
-        let url =
-            self.estimated_fee_url(chain_id, payment_token.into(), gas_limit, is_high_priority);
-
-        Ok(reqwest::get(url)
-            .await?
-            .json::<rpc::EstimatedFeeResponse>()
-            .await?
-            .estimated_fee())
+        Ok(json_get!(
+            self.client,
+            self.estimated_fee_url(chain_id, payment_token.into(), gas_limit, is_high_priority),
+            rpc::EstimatedFeeResponse
+        )?
+        .estimated_fee())
     }
 
     fn get_task_status_url(&self, task_id: H256) -> Url {
@@ -246,11 +240,11 @@ impl GelatoClient {
 
     /// Fetch the status of a task
     pub async fn get_task_status(&self, task_id: H256) -> ClientResult<rpc::TransactionStatus> {
-        let resp = self
-            .get(self.get_task_status_url(task_id))
-            .await?
-            .json::<rpc::TaskStatusResponse>()
-            .await?;
+        let resp = json_get!(
+            self.client,
+            self.get_task_status_url(task_id),
+            rpc::TaskStatusResponse,
+        )?;
 
         match resp {
             rpc::TaskStatusResponse::Data { data } => Ok(data

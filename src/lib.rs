@@ -31,3 +31,6 @@ pub use task::*;
 
 /// Re-export reqwest for convenience
 pub use reqwest;
+
+/// macros for in-crate use
+pub(crate) mod macros;
