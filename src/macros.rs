@@ -9,10 +9,10 @@ macro_rules! json_post {
     ($client:expr, $url:expr, $params:expr) => {
     {
         let url = $url;
-        let resp: reqwest::Response = $client.post(url.clone()).json($params).send().await?;
+        let resp = $client.post(url.clone()).json($params).send().await?;
         let text = resp.text().await?;
 
-        let result = serde_json::from_str(&text).map_err(Into::into);
+        let result = serde_json::from_str(&text).map_err(Into::<$crate::client::ClientError>::into);
 
         if result.is_err() {
             tracing::warn!(
@@ -51,4 +51,81 @@ macro_rules! json_get {
         }
         result
     }};
+}
+
+#[cfg(test)]
+mod test {
+    use std::str::FromStr;
+
+    use reqwest::Url;
+    use tracing_test::traced_test;
+
+    use crate::ClientError;
+
+    struct MockClient<'a>(&'a str);
+    impl<'a> MockClient<'a> {
+        fn get(self, _: Url) -> Self {
+            self
+        }
+        fn post(self, _: Url) -> Self {
+            self
+        }
+        fn json<S: serde::Serialize>(self, _: &S) -> Self {
+            self
+        }
+        async fn send(self) -> Result<MockClient<'a>, ()>
+        where
+            Self: 'static,
+        {
+            Ok(self)
+        }
+        async fn text(self) -> Result<String, ()> {
+            Ok(self.0.to_owned())
+        }
+    }
+
+    #[tokio::test]
+    #[traced_test]
+    async fn test_json_get_warn() -> Result<(), ()> {
+        let url = reqwest::Url::from_str("http://example.com").unwrap();
+        json_get!(MockClient("hello world"), url.clone(), u64).unwrap_err();
+        assert!(logs_contain("Unexpected response from server"));
+        assert!(logs_contain("hello world"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[traced_test]
+    async fn test_json_get_ok() -> Result<(), ()> {
+        let url = reqwest::Url::from_str("http://example.com").unwrap();
+        let num = json_get!(MockClient("1312"), url.clone(), u64).unwrap();
+        assert!(num == 1312);
+        assert!(!logs_contain("Unexpected response from server"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[traced_test]
+    async fn test_json_post_warn() -> Result<(), ()> {
+        let url = reqwest::Url::from_str("http://example.com").unwrap();
+        let f: Result<u8, ClientError> = json_post!(MockClient("hello world"), url.clone(), &1312);
+        assert!(f.is_err());
+        assert!(logs_contain("Unexpected response from server"));
+        assert!(logs_contain("hello world"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[traced_test]
+    async fn test_json_post_ok() -> Result<(), ()> {
+        let url = reqwest::Url::from_str("http://example.com").unwrap();
+        let num: u64 = json_post!(MockClient("1312"), url.clone(), &1312).unwrap();
+        assert!(num == 1312);
+        assert!(!logs_contain("Unexpected response from server"));
+
+        Ok(())
+    }
 }

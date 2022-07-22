@@ -34,6 +34,7 @@ futures-timer = "3.0.2"
 url = "2.2"
 
 [dev-dependencies]
+tracing-test = "0.2.3"
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features = ["eip712"] }
 tokio = { version = "1.0.1", features = ["rt-multi-thread", "macros"] }
 
