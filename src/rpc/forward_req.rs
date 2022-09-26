@@ -27,7 +27,7 @@ const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address targe
 /// Optionally, nonce may or may not be enforced, by setting
 /// `enforceSponsorNonce`. Some dApps may not need to rely on a nonce for
 /// ForwardRequest if they already implement strong forms of replay protection.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ForwardRequest {
     /// Chain id
@@ -273,7 +273,7 @@ mod test {
 
     #[test]
     fn it_computes_domain_separator() {
-        let domain_separator = (&*REQUEST).domain_separator().unwrap();
+        let domain_separator = (*REQUEST).domain_separator().unwrap();
 
         let fake_sig = (0..65u8).collect::<Vec<_>>();
         let fake_sig = Signature::try_from(fake_sig.as_ref()).unwrap();

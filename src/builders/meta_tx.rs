@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Builder for a [`MetaTxRequest`]
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MetaTxRequestBuilder {
     /// Chain id. Defaults to 1 (ethereum).
     pub chain_id: Option<u64>,

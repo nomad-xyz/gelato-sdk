@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use ethers_core::types::H256;
 
 /// Response to relay request, contains an ID for the task
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayResponse {
     /// The task ID

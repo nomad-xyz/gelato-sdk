@@ -24,7 +24,7 @@ const META_TX_TYPE: &str = "MetaTxRequest(uint256 chainId,address target,bytes d
 /// appropriate Gelato Relay's smart contract already verifies user and sponsor
 /// signatures. user is the EOA address that wants to interact with the dApp,
 /// while sponsor is the account that pays fees.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaTxRequest {
     /// Chain id

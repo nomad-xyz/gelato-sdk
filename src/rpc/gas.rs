@@ -5,7 +5,7 @@ use ethers_core::types::U64;
 use crate::FeeToken;
 
 /// An Estimated Fee Request
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct EstimatedFeeRequest {
     /// Payment token

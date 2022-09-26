@@ -50,7 +50,7 @@ pub enum PaymentType {
 /// A gelato fee token is an ERC20 address, which defaults to `0xee..ee`. This
 /// magic value indicates "eth" or the native asset of the chain. This FeeToken
 /// must be allowlisted by Gelato validators
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FeeToken(#[serde(serialize_with = "crate::ser::serialize_checksum_addr")] Address);
 
 impl std::ops::Deref for FeeToken {

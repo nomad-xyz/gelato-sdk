@@ -5,7 +5,7 @@ use ethers_core::types::{Address, Bytes, U64};
 use crate::FeeToken;
 
 /// A Relay Request
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
     /// The address of the contract to be called

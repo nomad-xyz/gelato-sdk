@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Builder for a [`ForwardRequest`]
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ForwardRequestBuilder {
     /// Chain id. Defaults to 1 (ethereum).
     pub chain_id: Option<u64>,

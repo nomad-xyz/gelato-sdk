@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use ethers_core::types::{Address, Bytes, H256, U256};
 
 /// Response to the GetTaskStatus api call. Contains an array of task statuses
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum TaskStatusResponse {
     /// Data
@@ -19,7 +19,7 @@ pub enum TaskStatusResponse {
 }
 
 /// A TransactionStatus object
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionStatus {
     /// Service name
@@ -44,7 +44,7 @@ pub struct TransactionStatus {
 }
 
 /// Execution details
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Execution {
     /// Transaction status
@@ -59,7 +59,7 @@ pub struct Execution {
 }
 
 /// Either check details, or a date/time string
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum CheckOrDate {
     /// Date
@@ -69,7 +69,7 @@ pub enum CheckOrDate {
 }
 
 /// Check info for a
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Check {
     /// Creation time
@@ -92,7 +92,7 @@ pub struct Check {
 }
 
 /// Transaction payload information
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
     /// Transaction target
@@ -105,7 +105,7 @@ pub struct Payload {
 }
 
 /// eip1559 fee data
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct FeeData {
     /// Gas Price
@@ -120,7 +120,7 @@ pub struct FeeData {
 }
 
 /// Task states
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TaskState {
     /// CheckPending
     CheckPending,

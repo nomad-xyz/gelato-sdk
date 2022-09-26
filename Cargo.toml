@@ -29,7 +29,7 @@ hex = "0.4.3"
 eyre = "0.6.8"
 tracing = "0.1.35"
 futures-util = "0.3.21"
-pin-project = "1.0.10"
+pin-project = "1.0.12"
 futures-timer = "3.0.2"
 url = "2.2"
 

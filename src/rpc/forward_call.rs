@@ -12,7 +12,7 @@ use crate::FeeToken;
 ///
 /// Because payment is of type `Synchronous`, the target contract MUST
 /// pay for its gas in `params.fee_token` during call forwarding.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ForwardCall {
     /// Chain ID
