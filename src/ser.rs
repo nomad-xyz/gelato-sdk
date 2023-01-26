@@ -135,7 +135,7 @@ mod test {
 
         let hex_sig = format!("0x{}", signature);
         assert_eq!(
-            serde_json::to_value(&signature).unwrap(),
+            serde_json::to_value(signature).unwrap(),
             serde_json::Value::String(hex_sig),
         )
     }

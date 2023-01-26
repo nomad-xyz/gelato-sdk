@@ -298,7 +298,7 @@ mod test {
         assert_eq!(hex_sig, SPONSOR_SIGNATURE);
 
         assert_eq!(
-            serde_json::to_value(&signature).unwrap(),
+            serde_json::to_value(signature).unwrap(),
             serde_json::Value::String(SPONSOR_SIGNATURE.to_owned()),
         );
     }

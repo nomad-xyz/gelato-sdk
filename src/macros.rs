@@ -35,8 +35,15 @@ macro_rules! json_get {
         json_get!($client, $url, $expected)
     };
     ($client:expr, $url:expr, $expected:ty) => {{
+        let unit = ();
+        json_get!($client, $url, $expected, unit)
+    }};
+    ($client:expr, $url:expr, $expected:ty, $body:ident,) => {
+        json_get!($client, $url, $expected, $body)
+    };
+    ($client:expr, $url:expr, $expected:ty, $body:ident) => {{
         let url = $url;
-        let resp = $client.get(url.clone()).send().await?;
+        let resp = $client.get(url.clone()).json(&$body).send().await?;
         let text = resp.text().await?;
 
         let result = serde_json::from_str::<$expected>(&text).map_err(Into::<$crate::client::ClientError>::into);
