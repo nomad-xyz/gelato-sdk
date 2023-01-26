@@ -21,7 +21,7 @@ async fn simple_queries() -> Result<(), reqwest::Error> {
     match task_status {
         Err(ClientError::Other(_)) => {}
         Ok(_) => {}
-        _ => panic!("Incorrect status {:?}", task_status),
+        _ => panic!("Incorrect status {task_status:?}"),
     }
 
     // Ensure we calling estimate fee on mainnet ethereum doesn't return error

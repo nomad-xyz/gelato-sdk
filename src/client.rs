@@ -81,7 +81,7 @@ impl GelatoClient {
     }
 
     fn send_relay_transaction_url(&self, chain_id: u64) -> reqwest::Url {
-        let path = format!("relays/{}", chain_id);
+        let path = format!("relays/{chain_id}");
         let mut url = self.url.clone();
         url.set_path(&path);
         url
@@ -104,7 +104,7 @@ impl GelatoClient {
         self.url
             .join("metabox-relays/")
             .unwrap()
-            .join(&format!("{}", chain_id))
+            .join(&format!("{chain_id}"))
             .unwrap()
     }
 
@@ -199,7 +199,7 @@ impl GelatoClient {
         gas_limit: U64,
         is_high_priority: bool,
     ) -> Url {
-        let path = format!("oracles/{}/estimate", chain_id);
+        let path = format!("oracles/{chain_id}/estimate");
         let mut url = self.url.clone();
         url.set_path(&path);
 
@@ -234,7 +234,7 @@ impl GelatoClient {
         self.url
             .join("/tasks/GelatoMetaBox/")
             .unwrap()
-            .join(&format!("{:?}/", task_id))
+            .join(&format!("{task_id:?}/"))
             .unwrap()
     }
 

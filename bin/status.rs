@@ -8,7 +8,7 @@ async fn main() -> Result<(), reqwest::Error> {
 
     let id = &env::args().collect::<Vec<_>>()[1];
     let task_status = gelato.get_task_status(id.parse().unwrap()).await.unwrap();
-    println!("Task status: {:?}", task_status);
+    println!("Task status: {task_status:?}");
 
     Ok(())
 }

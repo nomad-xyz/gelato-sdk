@@ -133,7 +133,7 @@ mod test {
         let signer: LocalWallet = "11".repeat(32).parse().unwrap();
         let signature: RsvSignature = signer.sign_message(Vec::new()).await.unwrap().into();
 
-        let hex_sig = format!("0x{}", signature);
+        let hex_sig = format!("0x{signature}");
         assert_eq!(
             serde_json::to_value(signature).unwrap(),
             serde_json::Value::String(hex_sig),
