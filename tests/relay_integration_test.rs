@@ -2,11 +2,12 @@ use ethers_core::types::H160;
 use gelato_sdk::*;
 
 #[tokio::test]
-async fn simple_queries() -> Result<(), reqwest::Error> {
+#[tracing_test::traced_test]
+async fn simple_queries() -> Result<(), ClientError> {
     let gelato = GelatoClient::default();
 
     // Ensure calling get chains returns non-empty array
-    let chains = gelato.get_gelato_relay_chains().await.unwrap();
+    let chains = gelato.get_gelato_relay_chains().await?;
     assert!(!chains.is_empty());
 
     // Ensure calling get task status returns a result
